@@ -20,6 +20,7 @@ class PINOPredictor:
         model_factory: Callable[[], Any] | None = None,
         contract: ModelContract | None = None,
         clamp_negative: bool = False,
+        allow_dem_nan: bool = False,
     ) -> None:
         self.loaded_model = load_model(
             model,
@@ -29,6 +30,7 @@ class PINOPredictor:
         )
         self.contract = self.loaded_model.contract
         self.clamp_negative = clamp_negative
+        self.allow_dem_nan = allow_dem_nan
 
     def preprocess(
         self,
@@ -53,7 +55,10 @@ class PINOPredictor:
             ("initial_water_depth", h0_arr),
             ("rainfall", rain_arr),
         ):
-            if not np.all(np.isfinite(arr)):
+            if name == "dem" and self.allow_dem_nan:
+                if np.any(np.isinf(arr)):
+                    raise ValueError("Input 'dem' contains Inf values.")
+            elif not np.all(np.isfinite(arr)):
                 raise ValueError(f"Input '{name}' contains NaN or Inf values.")
 
         if dem_arr.ndim not in (2, 3):

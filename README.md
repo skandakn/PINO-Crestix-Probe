@@ -209,3 +209,31 @@ result = predict(
 ```bash
 pytest -v
 ```
+
+---
+
+## 10. Audit, Physics Design & Masked DEM Inference
+
+- **Repository Audit Report:** [docs/PINO_AUDIT_REPORT.md](docs/PINO_AUDIT_REPORT.md)
+- **Physics-Loss Design Document:** [docs/PINO_PHYSICS_DESIGN.md](docs/PINO_PHYSICS_DESIGN.md)
+
+```python
+import numpy as np
+from crestix_pino.inference.predictor import PINOPredictor
+from crestix_pino.models.pino import GridMetadata, PINOFloodModel, PINOModelConfig
+
+cfg = PINOModelConfig(
+    grid_metadata=GridMetadata(dx=8.0, dy=8.0, dt=300.0, grid_height=32, grid_width=32)
+)
+model = PINOFloodModel.from_config(cfg)
+predictor = PINOPredictor(model=model, allow_dem_nan=True)
+
+dem = np.full((32, 32), 15.0, dtype=np.float32)
+dem[:4, :4] = np.nan  # building / invalid DEM cells -> masked to 0.0 m depth
+res = predictor.predict(
+    dem=dem,
+    rainfall=np.full((12,), 36.0, dtype=np.float32),
+    initial_water_depth=np.zeros((32, 32), dtype=np.float32),
+    forecast_steps=12,
+)
+```

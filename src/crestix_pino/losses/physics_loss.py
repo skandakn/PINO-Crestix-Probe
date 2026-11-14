@@ -38,21 +38,42 @@ class PhysicsLossWeights:
     nonnegative_depth: float = 1.0
 
 
-def compute_nonnegative_depth_loss(h: torch.Tensor) -> torch.Tensor:
+def _masked_sq_mean(tensor: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
+    sq = tensor * tensor
+    if mask is None:
+        return sq.mean()
+    m = mask.to(dtype=tensor.dtype, device=tensor.device)
+    return (sq * m).sum() / torch.clamp(m.sum(), min=1.0)
+
+
+def _erode_spatial_mask(mask_4d: torch.Tensor) -> torch.Tensor:
+    """Keep only cells whose 3x3 spatial neighborhood is valid (avoids building-step finite-diff artifacts)."""
+    b, t_dim, h_dim, w_dim = mask_4d.shape
+    m = mask_4d.reshape(b * t_dim, 1, h_dim, w_dim).to(dtype=torch.float32)
+    eroded = -F.max_pool2d(-m, kernel_size=3, stride=1, padding=1)
+    return eroded.reshape(b, t_dim, h_dim, w_dim) > 0.5
+
+
+def compute_nonnegative_depth_loss(
+    h: torch.Tensor,
+    valid_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
     """Penalize negative predicted water depths: mean(ReLU(-h)^2) [m^2]."""
     neg = F.relu(-h)
-    return (neg * neg).mean()
+    return _masked_sq_mean(neg, valid_mask)
 
 
 def compute_initial_condition_loss(
     h_pred: torch.Tensor,
     h_init: torch.Tensor,
+    valid_mask: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """Enforce initial water-depth condition at t=0: MSE(h_pred[:, 0], h_init) [m^2].
 
     Args:
         h_pred: Predicted water depth of shape (B, T, H, W).
         h_init: Initial depth of shape (B, H, W) or (B, T, H, W) (uses t=0 slice if 4D).
+        valid_mask: Optional boolean/float mask of shape (B, H, W) or (B, T, H, W).
     """
     h0_pred = h_pred[:, 0, :, :]
     if h_init.ndim == 4:
@@ -61,7 +82,8 @@ def compute_initial_condition_loss(
         h0_true = h_init
     else:
         raise ValueError(f"Expected h_init shape (B, H, W) or (B, T, H, W), got {tuple(h_init.shape)}")
-    return F.mse_loss(h0_pred, h0_true)
+    m0 = valid_mask[:, 0, :, :] if (valid_mask is not None and valid_mask.ndim == 4) else valid_mask
+    return _masked_sq_mean(h0_pred - h0_true, m0)
 
 
 class PhysicsLoss(nn.Module):
@@ -86,6 +108,7 @@ class PhysicsLoss(nn.Module):
         h_init: torch.Tensor,
         manning_n: Optional[torch.Tensor | float] = None,
         infiltration_m_s: Optional[torch.Tensor] = None,
+        valid_mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Evaluate all physics loss components and return (total_physics_loss, breakdown)."""
         h = output.h
@@ -96,6 +119,19 @@ class PhysicsLoss(nn.Module):
                 "PhysicsLoss requires latent velocity components (u, v) to evaluate "
                 "2D Shallow Water PDE residuals. Enable predict_latent_velocity=True."
             )
+
+        active_mask = valid_mask if valid_mask is not None else output.valid_mask
+        mask_4d: Optional[torch.Tensor] = None
+        pde_mask: Optional[torch.Tensor] = None
+        if active_mask is not None:
+            m = active_mask.to(device=h.device, dtype=torch.bool)
+            if m.ndim == 3:
+                mask_4d = m.unsqueeze(1).expand_as(h)
+            elif m.ndim == 4 and m.shape[1] == 1:
+                mask_4d = m.expand_as(h)
+            else:
+                mask_4d = m
+            pde_mask = _erode_spatial_mask(mask_4d)
 
         # 1. Shallow-Water PDE Residuals (Continuity + x/y Momentum)
         residuals = compute_swe_residuals(
@@ -108,9 +144,9 @@ class PhysicsLoss(nn.Module):
             infiltration_m_s=infiltration_m_s,
             config=self.sw_config,
         )
-        loss_cont = (residuals.continuity ** 2).mean()
-        loss_mom_x = (residuals.momentum_x ** 2).mean()
-        loss_mom_y = (residuals.momentum_y ** 2).mean()
+        loss_cont = _masked_sq_mean(residuals.continuity, pde_mask)
+        loss_mom_x = _masked_sq_mean(residuals.momentum_x, pde_mask)
+        loss_mom_y = _masked_sq_mean(residuals.momentum_y, pde_mask)
 
         # 2. Mass Conservation Loss
         mass_res = compute_mass_conservation_residual(
@@ -135,11 +171,11 @@ class PhysicsLoss(nn.Module):
         )
 
         # 4. Initial-Condition Constraint Loss
-        loss_ic = compute_initial_condition_loss(h_pred=h, h_init=h_init)
+        loss_ic = compute_initial_condition_loss(h_pred=h, h_init=h_init, valid_mask=mask_4d)
 
         # 5. Nonnegative Water Depth Penalty (evaluated on h_raw if present, else h)
         depth_for_neg = output.h_raw if output.h_raw is not None else h
-        loss_nonneg = compute_nonnegative_depth_loss(depth_for_neg)
+        loss_nonneg = compute_nonnegative_depth_loss(depth_for_neg, valid_mask=mask_4d)
 
         w = self.weights
         total = (
@@ -200,6 +236,7 @@ class PINOCompositeLoss(nn.Module):
             h_init=h_init,
             manning_n=manning_n,
             infiltration_m_s=infiltration_m_s,
+            valid_mask=valid_mask,
         )
         total = self.data_weight * l_data + self.physics_weight * l_phys
         breakdown = {
