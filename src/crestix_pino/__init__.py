@@ -1,5 +1,7 @@
 """Crestix Probe — Physics-Informed Fourier Neural Operator (PINO) for 2D Flood Prediction."""
 
+__version__ = "0.1.0"
+
 from crestix_pino.inference.model_loader import ModelContract, load_model
 from crestix_pino.inference.predictor import PINOPredictor, predict
 
@@ -29,6 +31,7 @@ __all__ = [
     "PhysicsLoss",
     "PhysicsLossWeights",
     "ShallowWaterConfig",
+    "__version__",
     "compute_swe_residuals",
     "load_model",
     "mm_per_hour_to_m_per_sec",

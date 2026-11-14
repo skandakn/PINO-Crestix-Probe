@@ -1,6 +1,6 @@
 # PINO-Crestix-Probe — Physics-Informed Fourier Neural Operator for 2D Flood Prediction
 
-Core Physics-Informed Fourier Neural Operator (PINO) architecture, 2D Shallow-Water Equations (SWE) physics engine, and evaluation/benchmarking/inference package for predicting spatial-temporal water-depth distributions over the **LarNO UKEA** terrain grid.
+Core Physics-Informed Fourier Neural Operator (PINO) architecture, 2D Shallow-Water Equations (SWE) physics engine, LarNO UKEA 32×32 dataset/training pipeline, and evaluation/benchmarking/inference package for predicting spatial-temporal water-depth distributions.
 
 ---
 
@@ -95,7 +95,22 @@ where $\mathcal{L}_{\text{physics}}$ explicitly combines:
 
 ---
 
-## 6. Folder Structure
+## 6. Verified UKEA Dataset Dimensions & Splits
+
+Source: `holmescao/LarNO-dataset` (`ukea_8m_5min` subset on Hugging Face).
+
+| Array | Shape | Dtype | Description |
+|---|---|---|---|
+| `dem.npy` | `(50, 120)` | `float32` | Static terrain elevation (m); building/border cells handled via `preprocess_dem` |
+| `h.npy` | `(36, 50, 120)` | `float64` | Ground-truth water depth (m) over `T = 36` steps (3 h at 5-min = 300 s intervals) |
+| `rainfall.npy` | `(360, 50, 120)` | `float64` | Rainfall forcing over `T_r = 360` sub-steps (10 sub-steps per 5-min water-depth frame) |
+
+- **Official Event-Level Split**: Train (6 events) + Validation (2 events) from `ukea_train.txt`; Test (12 events) from `ukea_test.txt`.
+- **Selected 32×32 Region**: Deterministic `(32, 32)` crop at `crop_y=9, crop_x=44` preserving `dx = dy = 8.0 m`.
+
+---
+
+## 7. Folder Structure
 
 ```text
 PINO-Crestix-Probe/
@@ -111,6 +126,15 @@ PINO-Crestix-Probe/
 │   ├── losses/
 │   │   ├── data_loss.py
 │   │   └── physics_loss.py
+│   ├── data/
+│   │   ├── dataset.py
+│   │   ├── dataloader.py
+│   │   └── preprocessing.py
+│   ├── training/
+│   │   ├── train.py
+│   │   ├── trainer.py
+│   │   ├── checkpoint.py
+│   │   └── config.py
 │   ├── evaluation/
 │   │   ├── metrics.py          # MAE, RMSE, R^2, relative depth, mass conservation, physics residual, horizon metrics
 │   │   ├── evaluate.py         # Held-out flood event evaluation runner against LarNO ground truth
@@ -119,13 +143,15 @@ PINO-Crestix-Probe/
 │       ├── predictor.py        # Preprocessing, inference, postprocessing, and `predict(...)` contract
 │       └── model_loader.py     # ModelContract and TorchScript / PyTorch / callable checkpoint loader
 ├── configs/
-│   └── default_pino.yaml
+│   ├── default_pino.yaml
+│   └── ukea_32x32.yaml
 ├── scripts/
+│   ├── train_pino.py
 │   ├── evaluate_pino.py        # CLI evaluation script
 │   └── benchmark_inference.py  # CLI latency benchmark (model-only vs. full pipeline)
 ├── reports/
 │   └── README.md               # Model card, limitations, and evaluation report template
-├── tests/                      # Unit tests for models, physics, losses, metrics, inference, visualization, evaluation
+├── tests/                      # Unit tests for models, physics, losses, dataset, training, metrics, inference, visualization, evaluation
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
@@ -133,16 +159,30 @@ PINO-Crestix-Probe/
 
 ---
 
-## 7. Installation
+## 8. Quick Start: Training, Evaluation & Inference
 
 ```bash
 pip install -r requirements.txt
 pip install -e ".[dev]"
+
+# Reproducible Training Command (GPU/CPU)
+python scripts/train_pino.py --config configs/ukea_32x32.yaml --download-data
+
+# Small CPU Smoke Test
+python scripts/train_pino.py --config configs/ukea_32x32.yaml --smoke-test --output-dir artifacts/smoke_test
+
+# Evaluate trained PINO checkpoint against held-out LarNO .npz flood events
+python scripts/evaluate_pino.py \
+  --checkpoint path/to/best_pino_model.pt \
+  --dataset path/to/held_out_larno_events/ \
+  --output-dir outputs/evaluation
+
+# Benchmark model-only vs. full-pipeline latency
+python scripts/benchmark_inference.py \
+  --checkpoint path/to/best_pino_model.pt \
+  --batch-size 1 --height 64 --width 64 --steps 24 \
+  --output-json outputs/benchmark.json
 ```
-
----
-
-## 8. Inference, Evaluation & Benchmarks
 
 ```python
 import numpy as np
@@ -160,23 +200,6 @@ result = predict(
     model="path/to/best_pino_model.pt",
     device="cpu",
 )
-
-water_depth = result["water_depth"]  # shape: (12, 32, 32), units: m
-metadata = result["metadata"]        # units, shape, latency_ms, negative-depth stats
-```
-
-```bash
-# Evaluate trained PINO checkpoint against held-out LarNO .npz flood events
-python scripts/evaluate_pino.py \
-  --checkpoint path/to/best_pino_model.pt \
-  --dataset path/to/held_out_larno_events/ \
-  --output-dir outputs/evaluation
-
-# Benchmark model-only vs. full-pipeline latency
-python scripts/benchmark_inference.py \
-  --checkpoint path/to/best_pino_model.pt \
-  --batch-size 1 --height 64 --width 64 --steps 24 \
-  --output-json outputs/benchmark.json
 ```
 
 ---

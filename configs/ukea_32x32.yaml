@@ -1,0 +1,79 @@
+# Reproducible PINO Training Configuration for LarNO UKEA 32x32 Region
+seed: 42
+device: "auto" # "auto" (CUDA if available else CPU), "cpu", or "cuda"
+deterministic: true
+
+data:
+  data_root: "data/ukea_8m_5min"
+  auto_download: false
+  # Official event-level split (8 train / 12 test); val_event_count=2 carves 2 events
+  # from train_events so test_events remains strictly held-out.
+  val_event_count: 2
+  # Selected 32x32 spatial sub-region from UKEA (50x120) at native 8m resolution
+  crop_y: 9
+  crop_x: 44
+  region_height: 32
+  region_width: 32
+  # Temporal windowing across 36 5-min frames (3h event duration)
+  window_t: 12
+  stride_t: 4
+  wall_height: 50.0
+  manning_n: 0.035
+  # Convert 300s (5-min) accumulated rainfall (mm) to m/s
+  rainfall_unit_scale: 3.3333333333333333e-6
+  batch_size: 4
+  num_workers: 0
+
+model:
+  in_channels: 4 # [dem_m, rainfall_m_s, initial_water_depth_m, manning_n]
+  append_grid_coords: true
+  width: 32
+  modes_t: 4
+  modes_y: 12
+  modes_x: 12
+  n_layers: 4
+  padding_t: 2
+  padding_y: 4
+  padding_x: 4
+  predict_latent_velocity: true
+  nonnegative_depth_mode: "softplus"
+
+physics:
+  gravity: 9.81
+  dx: 8.0 # Native UKEA 8m grid spacing
+  dy: 8.0
+  dt: 300.0 # 5-minute water-depth frame interval (s)
+  wet_dry_eps: 1.0e-3
+  default_manning_n: 0.035
+  data_loss_type: "mse"
+  data_weight: 1.0
+  physics_weight: 0.1
+  pde_continuity_weight: 1.0
+  pde_momentum_x_weight: 0.25
+  pde_momentum_y_weight: 0.25
+  mass_conservation_weight: 0.5
+  boundary_condition_weight: 0.5
+  initial_condition_weight: 1.0
+  nonnegative_depth_weight: 1.0
+
+optim:
+  epochs: 40
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  grad_clip_norm: 1.0
+  scheduler: "cosine"
+  min_lr: 1.0e-5
+  step_size: 15
+  gamma: 0.5
+  early_stopping_patience: 12
+  early_stopping_min_delta: 1.0e-6
+
+checkpoint:
+  output_dir: "artifacts/ukea_32x32"
+  save_every_epochs: 5
+  resume_path: null
+
+logging:
+  tensorboard: true
+  log_every_steps: 1
+  plot_losses: true
