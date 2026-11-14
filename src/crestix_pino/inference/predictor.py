@@ -178,6 +178,8 @@ class PINOPredictor:
                     "rainfall": self.contract.rainfall_units,
                     "water_depth": self.contract.depth_units,
                 },
+                "dt_seconds": self.contract.dt_seconds,
+                "cell_size_m": self.contract.cell_size_m,
                 "shape": list(water_depth.shape),
                 "dtype": str(water_depth.dtype),
                 "forecast_steps": prepared["forecast_steps"],
@@ -205,13 +207,19 @@ def predict(
     model: str | Callable[..., Any] | LoadedModel | None = None,
     device: str = "cpu",
     clamp_negative: bool = False,
+    allow_dem_nan: bool = False,
 ) -> dict[str, Any]:
     """Functional inference entrypoint matching the Crestix Probe PINO contract."""
     if model is None:
         raise ValueError(
             "A trained PINO model checkpoint path or callable must be provided via `model=...`."
         )
-    predictor = PINOPredictor(model=model, device=device, clamp_negative=clamp_negative)
+    predictor = PINOPredictor(
+        model=model,
+        device=device,
+        clamp_negative=clamp_negative,
+        allow_dem_nan=allow_dem_nan,
+    )
     return predictor.predict(
         dem=dem,
         rainfall=rainfall,

@@ -22,7 +22,8 @@ build/
 /data/raw_larno/
 /data/cache_larno/
 /data/downloaded/
-/outputs/
+/outputs/*
+!/outputs/README.md
 /logs/
 /artifacts/
 

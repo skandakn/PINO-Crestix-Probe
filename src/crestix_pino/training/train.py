@@ -9,8 +9,45 @@ from typing import Any, Dict, Optional, Sequence
 
 from ..data.dataloader import build_dataloaders
 from ..data.dataset import download_ukea_dataset
+from ..data.preprocessing import UKEA_TEST_EVENTS, UKEA_TRAIN_EVENTS
 from .config import TrainConfig, load_config
 from .trainer import PINOTrainer
+
+
+def _ensure_smoke_ukea_data(smoke_root: Path) -> str:
+    """Create tiny deterministic UKEA-layout synthetic arrays for `--smoke-test` when raw data is absent."""
+    import numpy as np
+
+    geo_dir = smoke_root / "geodata"
+    flood_dir = smoke_root / "flood"
+    geo_dir.mkdir(parents=True, exist_ok=True)
+    flood_dir.mkdir(parents=True, exist_ok=True)
+
+    dem_path = geo_dir / "dem.npy"
+    if not dem_path.exists():
+        yy, xx = np.meshgrid(
+            np.linspace(0.0, 1.0, 50, dtype=np.float32),
+            np.linspace(0.0, 1.0, 120, dtype=np.float32),
+            indexing="ij",
+        )
+        dem = (25.0 + 3.0 * (yy - 0.5) ** 2 + 2.0 * (xx - 0.5) ** 2).astype(np.float32)
+        np.save(dem_path, dem)
+
+    events = list(UKEA_TRAIN_EVENTS) + list(UKEA_TEST_EVENTS)
+    for idx, ev_id in enumerate(events):
+        ev_dir = flood_dir / ev_id
+        ev_dir.mkdir(parents=True, exist_ok=True)
+        h_path = ev_dir / "h.npy"
+        r_path = ev_dir / "rainfall.npy"
+        if not h_path.exists() or not r_path.exists():
+            rng = np.random.default_rng(100 + idx)
+            t_grid = np.linspace(0.0, 1.0, 36, dtype=np.float32)[:, None, None]
+            r_sub = rng.uniform(0.0, 0.25, size=(360, 50, 120)).astype(np.float32)
+            h_seq = np.clip(0.08 * np.sin(np.pi * t_grid) + rng.normal(0.0, 0.005, size=(36, 50, 120)), 0.0, None).astype(np.float32)
+            np.save(h_path, h_seq)
+            np.save(r_path, r_sub)
+
+    return str(smoke_root)
 
 
 def run_training(cfg: TrainConfig) -> Dict[str, Any]:
@@ -88,6 +125,9 @@ def main(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         cfg.optim.epochs = 2
         cfg.data.batch_size = 2
         cfg.logging.tensorboard = False
+        if not cfg.data.auto_download and not (Path(cfg.data.data_root) / "geodata" / "dem.npy").exists():
+            smoke_data_dir = Path(cfg.checkpoint.output_dir) / "synthetic_ukea_8m_5min"
+            cfg.data.data_root = _ensure_smoke_ukea_data(smoke_data_dir)
 
     summary = run_training(cfg)
     logging.getLogger(__name__).info("Training complete: %s", summary)

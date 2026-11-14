@@ -74,3 +74,67 @@ def test_load_model_errors():
         load_model("nonexistent_checkpoint.pt")
     with pytest.raises(ValueError, match="must be provided"):
         predict(np.zeros((4, 4)), 0.0, np.zeros((4, 4)), 2)
+
+
+def test_checkpoint_save_load_and_reproduce(tmp_path):
+    import torch
+    from crestix_pino.models.pino import GridMetadata, PINOFloodModel, PINOModelConfig
+    from crestix_pino.training.checkpoint import save_checkpoint
+
+    torch.manual_seed(7)
+    cfg = PINOModelConfig(
+        width=8,
+        modes_t=2,
+        modes_y=4,
+        modes_x=4,
+        n_layers=2,
+        forecast_steps=4,
+        grid_metadata=GridMetadata(dx=8.0, dy=8.0, dt=300.0, grid_height=16, grid_width=16),
+    )
+    model = PINOFloodModel.from_config(cfg)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    ckpt_path = tmp_path / "best.pt"
+
+    save_checkpoint(
+        path=ckpt_path,
+        model=model,
+        optimizer=optimizer,
+        scheduler=None,
+        epoch=1,
+        global_step=1,
+        best_val_loss=0.05,
+        history={"train_loss": [0.05]},
+        config={
+            "model": {
+                "in_channels": 4,
+                "width": 8,
+                "modes_t": 2,
+                "modes_y": 4,
+                "modes_x": 4,
+                "n_layers": 2,
+                "padding_t": 2,
+                "padding_y": 4,
+                "padding_x": 4,
+                "append_grid_coords": True,
+                "predict_latent_velocity": True,
+                "nonnegative_depth_mode": "softplus",
+            },
+            "physics": {"dx": 8.0, "dy": 8.0, "dt": 300.0, "default_manning_n": 0.035},
+            "data": {"region_height": 16, "region_width": 16, "window_t": 4, "wall_height": 50.0, "manning_n": 0.035},
+        },
+    )
+
+    dem = np.full((16, 16), 24.0, dtype=np.float32)
+    dem[:2, :2] = np.nan
+    rain = np.full((4,), 40.0, dtype=np.float32)
+    h0 = np.zeros((16, 16), dtype=np.float32)
+
+    out1 = predict(dem, rain, h0, 4, model=ckpt_path, allow_dem_nan=True)
+    reloaded = load_model(ckpt_path)
+    out2 = predict(dem, rain, h0, 4, model=reloaded, allow_dem_nan=True)
+
+    assert reloaded.framework == "pytorch_pino_checkpoint"
+    assert reloaded.contract == ModelContract(dt_seconds=300.0, cell_size_m=8.0)
+    assert out1["water_depth"].shape == (4, 16, 16)
+    assert np.all(out1["water_depth"][:, :2, :2] == 0.0)
+    assert np.max(np.abs(out1["water_depth"] - out2["water_depth"])) == 0.0

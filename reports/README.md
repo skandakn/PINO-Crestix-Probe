@@ -1,6 +1,6 @@
 # PINO Model Card & Evaluation Report — Crestix Probe
 
-> **Status:** Evaluation and inference harness implemented. Held-out test metrics and benchmark numbers are **TBD** pending upstream trained PINO checkpoint and held-out LarNO flood event datasets.
+> **Status:** Inference contract, checkpoint loader, CPU smoke training, validation, physics diagnostics (`docs/PINO_PHYSICS_DIAGNOSTICS_REPORT.md`), and cross-model comparison framework (`docs/COMMON_EVALUATION_FRAMEWORK.md`) are implemented and verified. Full-scale GPU-trained UKEA held-out test metrics remain pending upload of the trained checkpoint (`GoogleDrive://Crestix-Probe/PINO/checkpoints/best.pt` / `best_pino_model.pt`) and `v1.1.0` `.npz` predictions (see [`outputs/README.md`](../outputs/README.md) and [`docs/COMMON_EVALUATION_PROTOCOL.md`](../docs/COMMON_EVALUATION_PROTOCOL.md)).
 
 ## 1. Model Overview
 
@@ -13,11 +13,11 @@
 
 | Tensor / Argument | Shape | Units | Constraints |
 |---|---|---|---|
-| `dem` | `(H, W)` or `(B, H, W)` | `m` | Finite float32 |
+| `dem` | `(H, W)` or `(B, H, W)` | `m` | Finite float32 (`NaN` / `-9999.0` allowed when `allow_dem_nan=True`) |
 | `rainfall` | scalar, `(T,)`, `(H, W)`, `(T, H, W)`, or batched equivalents | `mm/h` | Finite, `>= 0` |
 | `initial_water_depth` | `(H, W)` or `(B, H, W)` | `m` | Matches `dem` shape, finite, `>= 0` |
 | `forecast_steps` | `int` | steps | `>= 1` |
-| **Output** `water_depth` | `(T, H, W)` or `(B, T, H, W)` | `m` | Finite float32 |
+| **Output** `water_depth` | `(T, H, W)` or `(B, T, H, W)` | `m` | Finite float32, masked to `0.0` on invalid DEM cells |
 
 ## 3. Held-Out Test Metrics (vs. LarNO Ground Truth)
 
@@ -59,4 +59,3 @@ To compare PINO fairly against ConvLSTM-based U-Net on identical held-out LarNO 
 - **PINO Export Guide:** [`../docs/COMMON_EVALUATION_FRAMEWORK.md`](../docs/COMMON_EVALUATION_FRAMEWORK.md)
 - **Unified Evaluator & Comparison Outputs:** [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) (`common_evaluator.py`, `outputs/comparison/model_comparison.csv`)
 - **Joint Comparison Report & Checklist:** [`MODEL_COMPARISON_REPORT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/MODEL_COMPARISON_REPORT.md) | [`LIMITATIONS_AND_FAIRNESS_CHECKLIST.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md)
-

@@ -1,269 +1,246 @@
-# PINO-Crestix-Probe — Physics-Informed Fourier Neural Operator for 2D Flood Prediction
+# PINO-Crestix-Probe — Physics-Informed Neural Operator for 2D Flood Prediction
 
-Core Physics-Informed Fourier Neural Operator (PINO) architecture, 2D Shallow-Water Equations (SWE) physics engine, LarNO UKEA 32×32 dataset/training pipeline, and evaluation/benchmarking/inference package for predicting spatial-temporal water-depth distributions.
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 
----
-
-## 1. Governing Equations (2D Shallow Water Equations)
-
-The model enforces the depth-averaged 2D Saint-Venant (Shallow Water) system in conservative form over bed topography $z_b(x, y)$:
-
-### Mass Conservation (Continuity)
-$$\frac{\partial h}{\partial t} + \frac{\partial (hu)}{\partial x} + \frac{\partial (hv)}{\partial y} = R(x, y, t) - I(x, y, t)$$
-
-### $x$-Momentum Conservation
-$$\frac{\partial (hu)}{\partial t} + \frac{\partial}{\partial x}\left(hu^2 + \frac{1}{2}gh^2\right) + \frac{\partial (huv)}{\partial y} = -g h \left(\frac{\partial z_b}{\partial x} + S_{f,x}\right)$$
-
-### $y$-Momentum Conservation
-$$\frac{\partial (hv)}{\partial t} + \frac{\partial (huv)}{\partial x} + \frac{\partial}{\partial y}\left(hv^2 + \frac{1}{2}gh^2\right) = -g h \left(\frac{\partial z_b}{\partial y} + S_{f,y}\right)$$
-
-where Manning's bed friction slopes are:
-$$S_{f,x} = \frac{n^2 u \sqrt{u^2 + v^2}}{\max(h, h_{\varepsilon})^{4/3}}, \qquad S_{f,y} = \frac{n^2 v \sqrt{u^2 + v^2}}{\max(h, h_{\varepsilon})^{4/3}}$$
-with wetting-drying threshold $h_{\varepsilon} = 10^{-3}\ \text{m}$ and wet-cell masking ($h > h_{\varepsilon}$) to prevent division-by-zero singularities on dry ground.
-
-### Physical Assumptions
-1. **Hydrostatic pressure distribution**: Vertical fluid acceleration is negligible compared to gravity ($L_{\text{horizontal}} \gg h$).
-2. **Incompressible fluid**: Constant water density $\rho$.
-3. **Depth-averaged horizontal velocity**: Uniform vertical profile $(u, v)$ at each $(x, y, t)$.
-4. **Mild bed slope**: $\cos\theta \approx 1$.
-5. **Infiltration**: $I(x, y, t) = 0$ unless an explicit infiltration field is supplied.
+> **Physics-Informed Neural Operator (FNO3d + 2D Shallow-Water Residual Heads)** for **Crestix Probe**  
+> Configured for **LarNO Urban Flood Benchmark (`ukea_8m_5min` 8.0 m, 32×32 crop)** and integrated with the shared 100-event **LarNO** data pipeline and common evaluation framework.  
+> Sibling Deep-Learning model & comparison host: [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-)
 
 ---
 
-## 2. Physical Units & Conversions
+## 1. Governing Physics & Latent Velocity Heads
 
-All model inputs, outputs, and PDE finite differences operate strictly in **SI units**:
+The model (`9,448,260` PyTorch parameter elements / `18,885,444` real FP32 scalars, `~75.54 MB` `state_dict`) predicts space-time water depth $h(t, x, y) \ge 0\ \text{m}$ alongside auxiliary unsupervised velocity fields $(u, v)\ [\text{m/s}]$ over terrain $z_b(x, y)\ [\text{m}]$ to evaluate the 2D Shallow-Water (Saint-Venant) system:
 
-| Quantity | Symbol | Unit | Conversion Rule |
+- **Mass Conservation:** $\partial_t h + \partial_x(hu) + \partial_y(hv) = R - I$ ($\text{m/s}$)
+- **Momentum Conservation ($x, y$):** Conservative shallow-water flux + topographic bed slope $\nabla z_b$ + Manning friction slope $S_{f,x}, S_{f,y}$ with wet-dry threshold $h_\varepsilon = 10^{-3}\ \text{m}$.
+- **Physical Assumptions:** Hydrostatic pressure, incompressible constant-density flow, depth-averaged uniform horizontal velocity $(u, v)$, mild bed slope ($\cos\theta \approx 1$), and $I = 0$ unless supplied.
+
+> **Important Note on Labels (`u, v`):** LarNO UKEA core datasets provide terrain (DEM), rainfall, and water depth (`h`), **not** ground-truth horizontal velocities $(u, v)$. Consequently, $(u, v)$ are **unsupervised latent variables** constrained only by PDE/boundary losses; no supervised velocity accuracy is claimed.
+
+---
+
+## 2. Unified Input / Output Contract (`ModelContract`)
+
+Both `PINO-Crestix-Probe` and `ConvLSTM-baased-U-Net-for-Crestix-Probe-` implement the same contract (`ModelContract`, `LoadedModel`, `load_model`, `predict`):
+
+| Tensor / Argument | Shape | SI Units | Constraints & Conversion |
 |---|---|---|---|
-| Water depth | $h, h_0$ | $\text{m}$ | `mm_to_meters`: $h_{\text{m}} = h_{\text{mm}} \times 10^{-3}$ |
-| Bed elevation (DEM) | $z_b$ | $\text{m}$ | Native meters |
-| Grid spacing | $\Delta x, \Delta y$ | $\text{m}$ | Configured from LarNO UKEA resolution |
-| Dataset time interval | $\Delta t$ | $\text{s}$ | Configured from dataset frame step |
-| Rainfall intensity | $R$ | $\text{m/s}$ | `mm_per_hour_to_m_per_sec`: $R_{\text{m/s}} = R_{\text{mm/h}} / 3{,}600{,}000$ |
-| Horizontal velocities | $u, v$ | $\text{m/s}$ | Latent output head |
-| Manning's roughness | $n$ | $\text{s}\cdot\text{m}^{-1/3}$ | Default $0.035$ |
-| Gravity | $g$ | $\text{m/s}^2$ | $9.81\ \text{m/s}^2$ |
+| `dem` | `(H, W)` or `(B, H, W)` | `m` | Bare-earth elevation; `NaN` / `-9999.0` masked to `valid_mask` when `allow_dem_nan=True` |
+| `rainfall` | scalar, `(T,)`, `(B, T)`, `(H, W)`, `(T, H, W)`, or `(B, T, H, W)` | `mm/h` | Finite, `>= 0.0` (converted internally to SI `m/s` via `/ 3,600,000`) |
+| `initial_water_depth` | `(H, W)` or `(B, H, W)` | `m` | Finite, `>= 0.0`, spatial shape matching `dem` |
+| `forecast_steps` | `int` | steps | `>= 1` (UKEA native cadence `dt_seconds=300.0`, `cell_size_m=8.0`) |
+| **Output `water_depth`** | `(T, H, W)` or `(B, T, H, W)` | `m` | `float32`, masked to `0.0` on invalid/building DEM cells (`clamp_negative` optional) |
 
-All spatial derivatives ($\partial/\partial x, \partial/\partial y$) and temporal derivatives ($\partial/\partial t$) are scaled by actual physical $\Delta x, \Delta y$ ($\text{m}$) and $\Delta t$ ($\text{s}$), rather than unitless grid indices.
-
----
-
-## 3. Input & Output Tensor Shapes
-
-### Input Tensor `x`: `(B, C_in, T, H, W)` (`C_in = 4`)
-- Channel `0`: **DEM** $z_b(x, y)$ [$\text{m}$]
-- Channel `1`: **Rainfall rate** $R(x, y, t)$ [$\text{m/s}$]
-- Channel `2`: **Initial water depth** $h_0(x, y)$ [$\text{m}$]
-- Channel `3`: **Manning's roughness** $n(x, y)$ [$\text{s}\cdot\text{m}^{-1/3}$]
-- *(Internal)*: When `append_grid_coords=True`, 3 normalized spatio-temporal coordinate channels $(t, y, x) \in [0, 1]^3$ are concatenated before the lifting layer.
-
-### Output (`PINOOutput`)
-- **Primary supervised output**: `h` of shape `(B, T, H, W)` [$\text{m}$], constrained to $h \ge 0$ (`softplus` / `relu` / `none`).
-- **Latent physics outputs**: `u, v` of shape `(B, T, H, W)` [$\text{m/s}$] predicted by an auxiliary `velocity_head` solely for evaluating the 2D SWE mass and momentum PDE residuals.
-
-### Limitations of Available Labels
-The selected **LarNO UKEA** core dataset provides terrain elevation (DEM), rainfall forcing, and water-depth ($h$) fields, **not** direct ground-truth horizontal velocity $(u, v)$ labels. Accordingly:
-- `h` is trained with both supervised data loss and physics-informed losses.
-- `u` and `v` are **unsupervised latent state variables** constrained strictly by the continuity equation, momentum equations, bed friction, and boundary conditions.
-- **No supervised velocity accuracy is claimed.**
+### Internal PINO Tensor Shapes & Units
+- **Model Input `x`:** `(B, 4, T, H, W)` with channels `[dem_m (m), rainfall_m_s (m/s), initial_depth_m (m), manning_n (s*m^-1/3)]` (+ 3 normalized `(t, y, x)` coordinate channels when `append_grid_coords=True`).
+- **Model Output (`PINOOutput`):** `h` `(B, T, H, W)` [$\text{m}$], latent `u, v` `(B, T, H, W)` [$\text{m/s}$].
 
 ---
 
-## 4. Boundary Conditions
+## 3. LarNO Dataset Acquisition & Expected Shapes / Units
 
-Supported per-edge boundary conditions (`BoundaryConfig(north, south, east, west)`):
-- **`"closed"`** (impermeable wall): Zero normal velocity ($u_n = 0$) and zero normal depth gradient ($\partial h / \partial n = 0$); zero boundary outflow flux in global mass balance.
-- **`"open"`** (free outflow): Zero-gradient Neumann outflow ($\partial h / \partial n = 0$, $\partial u_n / \partial n = 0$); boundary outflow flux $\int_{\partial \Omega} h (\mathbf{u} \cdot \mathbf{n})\, ds$ is accounted for in global mass balance.
-- **`"periodic"`**: Periodic matching across opposite edges.
+- **Upstream Benchmark Source:** [`holmescao/LarNO-dataset`](https://huggingface.co/datasets/holmescao/LarNO-dataset) (`geodata/*` + `flood/*` + `benchmark.zip`, 2.28 GB).
+- **Shared Google Drive Mirror:** `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/` (~20 GB uncompressed across 100 events).
 
----
-
-## 5. Loss Formulation
-
-The composite PINO training objective is:
-$$\mathcal{L}_{\text{total}} = w_{\text{data}}\mathcal{L}_{\text{data}} + w_{\text{phys}}\mathcal{L}_{\text{physics}}$$
-
-where $\mathcal{L}_{\text{physics}}$ explicitly combines:
-1. **Shallow-Water PDE Residuals** ($\mathcal{L}_{\text{cont}}, \mathcal{L}_{\text{mom}, x}, \mathcal{L}_{\text{mom}, y}$): Mean-squared PDE residuals over `(B, T, H, W)` with dry-cell momentum masking.
-2. **Global / Step-wise Mass Conservation** ($\mathcal{L}_{\text{mass}}$):
-   $$\frac{V(t_{k+1}) - V(t_k)}{\Delta t} = \bar{Q}_{\text{rain}, k} - \bar{Q}_{\text{outflow}, k}, \qquad V(t_k) = \sum_{i,j} h_{i,j}(t_k)\Delta x \Delta y$$
-   normalized by domain area $A = H W \Delta x \Delta y$ [$\text{m/s}$].
-3. **Boundary-Condition Consistency** ($\mathcal{L}_{\text{BC}}$): Penalizes violations of wall / open / periodic constraints on all 4 edges.
-4. **Initial-Condition Constraint** ($\mathcal{L}_{\text{IC}}$): $\text{MSE}\big(h(\cdot, t=0), h_0\big)$.
-5. **Nonnegative Water Depth** ($\mathcal{L}_{\ge 0}$): $\text{mean}\big(\text{ReLU}(-h)^2\big)$.
-
----
-
-## 6. Verified UKEA Dataset Dimensions & Splits
-
-Source: `holmescao/LarNO-dataset` (`ukea_8m_5min` subset on Hugging Face).
-
-| Array | Shape | Dtype | Description |
-|---|---|---|---|
-| `dem.npy` | `(50, 120)` | `float32` | Static terrain elevation (m); building/border cells handled via `preprocess_dem` |
-| `h.npy` | `(36, 50, 120)` | `float64` | Ground-truth water depth (m) over `T = 36` steps (3 h at 5-min = 300 s intervals) |
-| `rainfall.npy` | `(360, 50, 120)` | `float64` | Rainfall forcing over `T_r = 360` sub-steps (10 sub-steps per 5-min water-depth frame) |
-
-- **Official Event-Level Split**: Train (6 events) + Validation (2 events) from `ukea_train.txt`; Test (12 events) from `ukea_test.txt`.
-- **Selected 32×32 Region**: Deterministic `(32, 32)` crop at `crop_y=9, crop_x=44` preserving `dx = dy = 8.0 m`.
-
----
-
-## 7. Folder Structure
-
-```text
-PINO-Crestix-Probe/
-├── src/crestix_pino/
-│   ├── models/
-│   │   ├── fno.py
-│   │   └── pino.py
-│   ├── physics/
-│   │   ├── shallow_water.py
-│   │   ├── residuals.py
-│   │   ├── conservation.py
-│   │   └── boundary_conditions.py
-│   ├── losses/
-│   │   ├── data_loss.py
-│   │   └── physics_loss.py
-│   ├── data/
-│   │   ├── dataset.py
-│   │   ├── dataloader.py
-│   │   └── preprocessing.py
-│   ├── training/
-│   │   ├── train.py
-│   │   ├── trainer.py
-│   │   ├── checkpoint.py
-│   │   └── config.py
-│   ├── evaluation/
-│   │   ├── metrics.py          # MAE, RMSE, R^2, relative depth, mass conservation, physics residual, horizon metrics
-│   │   ├── evaluate.py         # Held-out flood event evaluation runner against LarNO ground truth
-│   │   └── visualization.py    # Spatial error maps, time-series comparisons, horizon plots
-│   └── inference/
-│       ├── predictor.py        # Preprocessing, inference, postprocessing, and `predict(...)` contract
-│       └── model_loader.py     # ModelContract and TorchScript / PyTorch / callable checkpoint loader
-├── configs/
-│   ├── default_pino.yaml
-│   └── ukea_32x32.yaml
-├── scripts/
-│   ├── train_pino.py
-│   ├── evaluate_pino.py        # CLI evaluation script
-│   └── benchmark_inference.py  # CLI latency benchmark (model-only vs. full pipeline)
-├── reports/
-│   └── README.md               # Model card, limitations, and evaluation report template
-├── tests/                      # Unit tests for models, physics, losses, dataset, training, metrics, inference, visualization, evaluation
-├── pyproject.toml
-├── requirements.txt
-└── README.md
-```
-
----
-
-## 8. Quick Start: Training, Evaluation & Inference
+| Catchment | Region Tag | Events | Spatial Res. | Native Grid `(H, W)` | Target Crop `(H, W)` | Depth Array `h.npy` | Rainfall Array `rainfall.npy` | Cadence |
+|---|---|---|---|---|---|---|---|---|
+| **UKEA Native** | `ukea_8m_5min` | 20 | `8.0 m` | `(50, 120)` | — | `(36, 50, 120)` `float64` (`m`) | `(360, 50, 120)` `float64` (`mm/30s`) | 5 min depth / 30 s rain (10:1 sum) |
+| **UKEA PINO Crop** | `ukea_8m_5min` | 20 | `8.0 m` | `(50, 120)` | `(32, 32)` `[9:41, 44:76]` | `(36, 32, 32)` (`m`) | `(36, 32, 32)` summed `mm/5min` -> `m/s` (`* 3.333e-6`) | 5 min (`dt=300 s`, `dx=8 m`) |
+| **Futian (Shared Manifest)** | `region1_20m` | 80 | `20.0 m` | `(400, 560)` | — | `(72, 400, 560)` `float64` (`m`) | `(72, 400, 560)` `float64` (`mm/5min`) | 5 min (1:1 alignment, 6 h) |
 
 ```bash
-pip install -r requirements.txt
-pip install -e ".[dev]"
+# 1. Dry-run download check via shared manifest
+python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --dry-run
 
-# Reproducible Training Command (GPU/CPU)
-python scripts/train_pino.py --config configs/ukea_32x32.yaml --download-data
+# 2. Download UKEA subset for PINO training/validation
+python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --catchment UKEA --split val --output-dir data/raw_larno
+# Or download directly via training flag: python scripts/train_pino.py --config configs/ukea_32x32.yaml --download-data
 
-# Small CPU Smoke Test
-python scripts/train_pino.py --config configs/ukea_32x32.yaml --smoke-test --output-dir artifacts/smoke_test
-
-# Evaluate trained PINO checkpoint against held-out LarNO .npz flood events
-python scripts/evaluate_pino.py \
-  --checkpoint path/to/best_pino_model.pt \
-  --dataset path/to/held_out_larno_events/ \
-  --output-dir outputs/evaluation
-
-# Benchmark model-only vs. full-pipeline latency
-python scripts/benchmark_inference.py \
-  --checkpoint path/to/best_pino_model.pt \
-  --batch-size 1 --height 64 --width 64 --steps 24 \
-  --output-json outputs/benchmark.json
-```
-
-```python
-import numpy as np
-from crestix_pino import predict
-
-dem = np.zeros((32, 32), dtype=np.float32)                  # meters (m)
-rainfall = np.full((12,), 45.0, dtype=np.float32)           # mm/h
-initial_water_depth = np.zeros((32, 32), dtype=np.float32)  # meters (m)
-
-result = predict(
-    dem=dem,
-    rainfall=rainfall,
-    initial_water_depth=initial_water_depth,
-    forecast_steps=12,
-    model="path/to/best_pino_model.pt",
-    device="cpu",
-)
+# 3. Inspect manifest integrity & array schemas
+python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --split-manifest data/split_manifest.json
 ```
 
 ---
 
-## 9. Running Unit Tests
+## 4. Shared Event Split Manifests & Versions
 
+- **Official 100-Event Stratified Manifest:** [`data/split_manifest.json`](data/split_manifest.json) — **version `1.0.0`**
+  - **Train (`80` events):** `64` Futian + `16` UKEA (`Train ∩ Val = ∅`, `Train ∩ Test = ∅`, `Val ∩ Test = ∅`).
+  - **Val (`10` events):** `8` Futian + `2` UKEA (`r100y_p0.5_d3h_1`, `r200y_p0.7_d3h_1`).
+  - **Test (`10` events):** `8` Futian + `2` UKEA (`r100y_p0.6_d3h_1`, `r500y_p0.9_d3h_1`).
+  - Normalization moments in [`data/dataset_statistics.json`](data/dataset_statistics.json) are computed strictly on the 80 training events ([`reports/data_quality_report.md`](reports/data_quality_report.md)).
+- **Cross-Model UKEA `32x32` Benchmark Manifest:** [`shared_manifest.json`](shared_manifest.json) — **version `1.1.0`** (`sha256: da79e0b11e6d4e85006c9d8a9da8aaf69664a0f251f0a7001c7db62e210ae0dd`)
+  - Synchronized byte-for-byte with [`ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/shared_manifest.json): `ukea_8m_5min`, crop `[9:41, 44:76]` (`crop_y=9, crop_x=44`, `32x32`, `cell_size_m=8.0`), `forecast_horizon_steps=36` (`dt_seconds=300.0`), `flood_threshold_m=0.03`, `valid_cell_rule="non_building_and_finite_dem"`.
+  - **Split:** **6 `train_events`** / **2 `val_events`** / **10 `test_events`** (exact IDs in `shared_manifest.json`).
+  - **Leakage Safeguard:** `8/10` of `shared_manifest.json` `v1.1.0` UKEA test events sit inside `data/split_manifest.json` `v1.0.0` train/val, and `configs/ukea_32x32.yaml` defaults to `UKEAPinoDataset`'s upstream 8 train/val (`6/2`) + 12 test split. Do **not** evaluate `v1.0.0`-trained weights against `shared_manifest.json` `v1.1.0`; train and evaluate strictly on the exact `shared_manifest.json` `v1.1.0` IDs when exporting for cross-model comparison.
+
+---
+
+## 5. Environment Setup & Dependency Installation
+
+### Option A: `pip` + Virtual Environment
 ```bash
-pytest -v
+git clone https://github.com/skandakn/PINO-Crestix-Probe.git
+cd PINO-Crestix-Probe
+
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+
+python -m pip install -r requirements.txt
+python -m pip install -e ".[dev]"
 ```
 
----
-
-## 10. Audit, Physics Design & Masked DEM Inference
-
-- **Repository Audit Report:** [docs/PINO_AUDIT_REPORT.md](docs/PINO_AUDIT_REPORT.md)
-- **Physics-Loss Design Document:** [docs/PINO_PHYSICS_DESIGN.md](docs/PINO_PHYSICS_DESIGN.md)
-
-```python
-import numpy as np
-from crestix_pino.inference.predictor import PINOPredictor
-from crestix_pino.models.pino import GridMetadata, PINOFloodModel, PINOModelConfig
-
-cfg = PINOModelConfig(
-    grid_metadata=GridMetadata(dx=8.0, dy=8.0, dt=300.0, grid_height=32, grid_width=32)
-)
-model = PINOFloodModel.from_config(cfg)
-predictor = PINOPredictor(model=model, allow_dem_nan=True)
-
-dem = np.full((32, 32), 15.0, dtype=np.float32)
-dem[:4, :4] = np.nan  # building / invalid DEM cells -> masked to 0.0 m depth
-res = predictor.predict(
-    dem=dem,
-    rainfall=np.full((12,), 36.0, dtype=np.float32),
-    initial_water_depth=np.zeros((32, 32), dtype=np.float32),
-    forecast_steps=12,
-)
-```
-
----
-
-## 11. Official LarNO Shared Data Pipeline (100 Events)
-
-This repository integrates the verified, shared LarNO dataset pipeline and contracts coordinated with the [ConvLSTM U-Net](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) team:
-
-### Catchment Architecture & Resolution Preservation
-- **Futian Catchment (`region1_20m`):** 80 events at **20.0 m** resolution, $400 \times 560$ grid, 72 timesteps (5 min), 1:1 temporal alignment.
-- **UKEA Catchment (`ukea_8m_5min`):** 20 events at **8.0 m** resolution, $50 \times 120$ grid, 360 rainfall sub-steps aligned to 36 depth frames (10:1 accumulation).
-- Native spatial resolutions are strictly preserved across both catchments.
-
-### Manifests & Training Statistics
-- `data/event_manifest.csv`: Exhaustive metadata table for all 100 events (dimensions, timesteps, dtypes, units, alignment ratios).
-- `data/split_manifest.json`: Invariant event-level stratified split (80 Train / 10 Val / 10 Test). Zero leakage between splits.
-- `data/dataset_statistics.json`: Normalization parameters fitted **strictly on the 80 training events** (test events excluded).
-- `configs/larno_data_pipeline.yaml`: Declarative shared pipeline configuration.
-- `reports/data_quality_report.md`: Complete QA audit and verification report.
-- `src/crestix_pino/data/larno_dataset.py`: Multi-catchment memory-mapped dataset loader supporting both PINO and ConvLSTM formats.
-
-### Pipeline Tools
+### Option B: `conda` (`environment.yml`)
 ```bash
-# Audit manifest integrity & event counts
+conda env create -f environment.yml
+conda activate crestix-pino
+```
+
+---
+
+## 6. Exact Commands: Preprocessing, Training, Validation, Testing & Inference
+
+### A. Preprocessing & Physics Diagnostics
+```bash
+# Audit 100-event manifests and split disjointness
 python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --split-manifest data/split_manifest.json
 
-# Reproducible download utility (dry-run check)
-python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --catchment UKEA --split val --dry-run
+# Run physics validation & dimensional diagnostics suite
+python scripts/validate_pino_physics.py
+```
+
+### B. Training
+```bash
+# CPU Smoke Test (2 epochs; auto-generates deterministic synthetic UKEA data if raw data is absent)
+python scripts/train_pino.py --config configs/ukea_32x32.yaml --smoke-test --output-dir artifacts/smoke_test
+
+# Full UKEA 32x32 Training (auto-downloads raw UKEA data if --download-data is passed)
+python scripts/train_pino.py --config configs/ukea_32x32.yaml --download-data --output-dir artifacts/ukea_32x32
+```
+
+### C. Validation & Testing
+```bash
+# Validate saved checkpoint on val or held-out test split (writes optional JSON summary)
+python scripts/validate_pino.py --checkpoint artifacts/smoke_test/checkpoints/best.pt --split val --output-json outputs/smoke_validation.json
+python scripts/validate_pino.py --checkpoint artifacts/ukea_32x32/checkpoints/best.pt --split test --output-json outputs/test_validation.json
+
+# Evaluate against held-out LarNO .npz events
+python scripts/evaluate_pino.py \
+  --checkpoint artifacts/ukea_32x32/checkpoints/best.pt \
+  --dataset path/to/held_out_larno_events/ \
+  --output-dir outputs/evaluation
+```
+
+### D. Sample Inference & Checkpoint Reproduction Verification
+```bash
+# Run standardized CLI inference and verify bitwise identical reproduction across two checkpoint loads
+python scripts/predict_pino.py \
+  --checkpoint artifacts/smoke_test/checkpoints/best.pt \
+  --steps 12 --verify-reproduction --output-json outputs/sample_inference.json
+```
+
+### E. Standardized Python Inference API
+```python
+import numpy as np
+from crestix_pino import load_model, predict
+
+dem = np.full((32, 32), 25.0, dtype=np.float32)       # m (NaN building cells masked to 0.0 depth)
+dem[:2, :2] = np.nan
+rainfall = np.full((12,), 42.0, dtype=np.float32)     # mm/h
+h0 = np.zeros((32, 32), dtype=np.float32)             # m
+
+res = predict(
+    dem=dem,
+    rainfall=rainfall,
+    initial_water_depth=h0,
+    forecast_steps=12,
+    model="artifacts/smoke_test/checkpoints/best.pt",
+    allow_dem_nan=True,
+    clamp_negative=True,
+)
+print(res["water_depth"].shape)       # (12, 32, 32)
+print(res["metadata"]["units"])       # {'dem': 'm', 'rainfall': 'mm/h', 'water_depth': 'm'}
+```
+
+### F. Latency Benchmark & Full Test Suite
+```bash
+# Measure model-only vs full-pipeline latency
+python scripts/benchmark_inference.py \
+  --checkpoint artifacts/smoke_test/checkpoints/best.pt \
+  --batch-size 1 --height 32 --width 32 --steps 12 --warmup 1 --runs 3 \
+  --output-json outputs/benchmark.json
+
+# Run full unit, physics & inference test suite (45 tests)
+python -m pytest -v
+```
+
+---
+
+## 7. Shared Checkpoints & Common Evaluation Protocol
+
+- **Common Evaluation Protocol:** [`docs/COMMON_EVALUATION_PROTOCOL.md`](docs/COMMON_EVALUATION_PROTOCOL.md) (synchronized identically in [`ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/docs/COMMON_EVALUATION_PROTOCOL.md)).
+- **Outputs Policy & Model Card:** [`outputs/README.md`](outputs/README.md) & [`reports/README.md`](reports/README.md).
+  - Best UKEA checkpoint (`train_pino.py`): `GoogleDrive://Crestix-Probe/PINO/checkpoints/best.pt` -> local `artifacts/ukea_32x32/checkpoints/best.pt`
+  - Common-Eval checkpoint alias (`docs/COMMON_EVALUATION_FRAMEWORK.md`): `GoogleDrive://Crestix-Probe/PINO/checkpoints/best_pino_model.pt` -> local `artifacts/ukea_32x32/best_pino_model.pt`
+  - Resume checkpoint: `GoogleDrive://Crestix-Probe/PINO/checkpoints/last.pt` -> local `artifacts/ukea_32x32/checkpoints/last.pt`
+  - PINO held-out prediction archive (`v1.1.0`): `GoogleDrive://Crestix-Probe/PINO/predictions_v1.1.0/`
+  - Raw dataset: `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/`
+  - Check local availability: `python scripts/download_checkpoints.py --check`
+
+---
+
+## 8. Verified Reproduction & Smoke Check Results
+
+All verification checks below are runnable on CPU in `.venv` (`torch 2.15.0+cpu`, Python `3.12.10`):
+- **Full Pytest Suite (`python -m pytest -v`):** **45/45 tests pass**, covering FNO3d gradients, PINO forward/masking, physics residuals, diagnostics `S1`–`S7`, dataset/manifest disjointness, training/resume, and checkpoint load+reproduction (`test_checkpoint_save_load_and_reproduce`).
+- **CPU Smoke Training (`scripts/train_pino.py --smoke-test --output-dir artifacts/smoke_test`):** Saves `artifacts/smoke_test/checkpoints/best.pt` (`best_val_loss=0.002935`, `val_rmse=0.03579 m` across 2 epochs of deterministic synthetic UKEA windows).
+- **Checkpoint Validation (`scripts/validate_pino.py --checkpoint artifacts/smoke_test/checkpoints/best.pt --split val`):** Loads `artifacts/smoke_test/checkpoints/best.pt` (`framework=pytorch_pino_checkpoint`, `num_windows=14`), obtaining `mae_m=0.031895 m`, `rmse_m=0.038645 m`, `nonnegative_violations.violation_count=0` across `172,032` cells.
+- **Sample Inference & Reproduction (`scripts/predict_pino.py --verify-reproduction`):** Loads `artifacts/smoke_test/checkpoints/best.pt` independently twice on a `32x32` DEM with `NaN` building cells -> `output_water_depth_shape=[12, 32, 32]`, `nan_cell_zeroed=true`, `raw_negative_cell_count=0`, `reproduction_verified=true`, `reproduction_max_abs_diff_m=0.0`.
+- **Latency Benchmark (`scripts/benchmark_inference.py`):** Measures CPU/GPU `model_only` and `full_pipeline` latency (`ms/sample`) and throughput (`samples/s`) cleanly on loaded `.pt` checkpoints.
+
+---
+
+## 9. Limitations & Physics Diagnostic Findings
+
+Extensive physics verification documented in [`docs/PINO_PHYSICS_DIAGNOSTICS_REPORT.md`](docs/PINO_PHYSICS_DIAGNOSTICS_REPORT.md), [`docs/PINO_DIMENSIONAL_ANALYSIS.md`](docs/PINO_DIMENSIONAL_ANALYSIS.md), and [`docs/PINO_AUDIT_REPORT.md`](docs/PINO_AUDIT_REPORT.md) establishes the following critical limitations:
+
+1. **Domain & Scale Differences:** The default FNO config operates on a `32x32` crop of `ukea_8m_5min` (`dx=8.0 m`, `dt=300.0 s`). Default fallbacks in `ModelContract`/`metrics.py` (`dt=30 s, dx=10 m`) and `ShallowWaterConfig` (`dx=2 m, dt=60 s`) differ sharply from UKEA and Futian (`20.0 m`); callers must always propagate explicit catchment `(dx, dt)` metadata.
+2. **Limited Event Count:** `holmescao/LarNO-dataset` contains only 20 UKEA events (`8/12` in upstream `UKEAPinoDataset`; `16/2/2` in `split_manifest.json` v1.0.0; `6/2/10` in `shared_manifest.json` v1.1.0) and 80 Futian events, limiting statistical power for rare return-period storms (`r300y`, `r500y`).
+3. **Simulated & Unsupervised Labels:** Ground-truth depths `h` come from synthetic/simulated MIKE+ 2D solver runs rather than field gauges, while velocity fields $(u, v)$ have **no labels at all**. Unsupervised $(u, v)$ gauge freedom allows `BoundaryConfig.south="open"` to satisfy conservation residuals analytically even with inaccurate depth volumes (`S7`).
+4. **Open Sub-Catchment Boundary Outflow vs Closed Metrics:** On the open `32x32` UKEA crop (`[9:41, 44:76]`), **`75.53%`–`78.28%`** of storm rainfall exits laterally across sub-catchment edges. Therefore, closed-basin `compute_mass_conservation_error` flags even ground-truth LarNO data with `87.6%–88.6%` error (`BoundaryConfig` defaults `north/east/west="closed"` also need open/calibrated outflow treatment on sub-domain crops).
+5. **Physics Loss Defects & Assumptions (`S4`–`S6`):**
+   - `softplus(beta=5)` paired with `MSE(ReLU(-h_raw))` traps dry streets at a positive bias (`~0.041–0.115 m` in `S5`) when negative `h_raw` is penalized directly.
+   - `NaN` DEM building fills (`+50 m`) must be paired with `valid_mask` masking (`allow_dem_nan=True`) so central differences do not differentiate across artificial vertical cliffs (`S6`).
+   - Adding unscaled residuals across incompatible SI units (`m^2`, `m^2/s^2`, `m^4/s^4`, mixed BCs) suppresses continuity gradients relative to momentum and data losses without nondimensionalization (`docs/PINO_DIMENSIONAL_ANALYSIS.md`).
+
+---
+
+## 10. Pre-Demonstration Verification Checklist
+
+- [x] New contributor can install dependencies via `requirements.txt` or `environment.yml`
+- [x] Dataset manifests (`data/split_manifest.json` v1.0.0, `shared_manifest.json` v1.1.0) and downloader dry-run work cleanly
+- [x] Synthetic & physics tests pass (`45/45` via `pytest -v`)
+- [x] Saved checkpoint (`artifacts/smoke_test/checkpoints/best.pt`) loads independently via `load_model` / `predict`
+- [x] Sample inference reproduces bitwise identically across independent checkpoint loads (`max_abs_diff = 0.0 m`)
+- [x] All evaluation metrics (`MAE [m]`, `RMSE [m]`, `R^2`, `Rel. L2`, diffusive-wave residual `m/s`) and SI units are documented
+- [x] Held-out test events remain isolated from training splits and normalization statistics (`Train ∩ Val ∩ Test = ∅`)
+
+---
+
+## 11. Citation & Dataset Attribution
+
+- **Dataset:** [`holmescao/LarNO-dataset`](https://huggingface.co/datasets/holmescao/LarNO-dataset)
+- **Reference Paper:** *Large-scale urban flood modeling and zero-shot high-resolution generalization with LarNO*, *Journal of Hydrology*, 2026.
+
+```bibtex
+@misc{crestix_probe_pino_2026,
+  title  = {Crestix Probe: Physics-Informed Neural Operator for 2D Urban Flood Forecasting},
+  author = {Crestix Probe Modeling Team},
+  year   = {2026},
+  url    = {https://github.com/skandakn/PINO-Crestix-Probe}
+}
 ```
 
 ---
@@ -273,8 +250,8 @@ python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --ca
 Cross-model benchmarking against **ConvLSTM-based U-Net** is governed by a single shared protocol hosted in [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-):
 
 - **Integration Guide & Export Instructions:** [`docs/COMMON_EVALUATION_FRAMEWORK.md`](docs/COMMON_EVALUATION_FRAMEWORK.md)
-- **Shared Event Manifest (`v1.1.0`):** [`shared_manifest.json`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/shared_manifest.json) (`holmescao/LarNO-dataset`, `ukea_8m_5min`, crop `(9, 44, 32x32)`, 6 train / 2 val / 10 test events, 36-step horizon, `0.03 m` flood threshold, `non_building_and_finite_dem` masking)
+- **Synchronized Evaluation Protocol:** [`docs/COMMON_EVALUATION_PROTOCOL.md`](docs/COMMON_EVALUATION_PROTOCOL.md)
+- **Shared Event Manifest (`v1.1.0`):** [`shared_manifest.json`](shared_manifest.json) (synchronized with [`ConvLSTM/shared_manifest.json`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/shared_manifest.json) — `holmescao/LarNO-dataset`, `ukea_8m_5min`, crop `(9, 44, 32x32)`, 6 train / 2 val / 10 test events, 36-step horizon, `0.03 m` flood threshold, `non_building_and_finite_dem` masking)
 - **Canonical Evaluator & Prediction Format:** [`common_evaluator.py`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/common_evaluator.py) | [`PREDICTION_FORMAT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/PREDICTION_FORMAT.md)
 - **Comparison Report & Fairness Checklist:** [`reports/MODEL_COMPARISON_REPORT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/MODEL_COMPARISON_REPORT.md) | [`reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md)
 - **Google Drive Prediction Archive:** `GoogleDrive://Crestix-Probe/PINO/predictions_v1.1.0/`
-
