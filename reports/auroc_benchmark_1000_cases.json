@@ -1,0 +1,53 @@
+{
+  "num_cases_evaluated": 1000,
+  "total_cell_evaluations": 1005283,
+  "flood_threshold_m": 0.03,
+  "convlstm_unet": {
+    "global_auroc": 0.9964711130984336,
+    "mean_case_auroc": 0.9943870685261267,
+    "std_case_auroc": 0.006699156805206126,
+    "median_case_auroc": 0.9969438113397318,
+    "iqr_case_auroc": [
+      0.9933312304227524,
+      0.9984052779766375
+    ],
+    "global_pr_auc": 0.998407556559175,
+    "precision_at_threshold": 0.9776273583936658,
+    "recall_at_threshold": 0.9800389806200125,
+    "f1_at_threshold": 0.9788316840847203,
+    "csi_at_threshold": 0.9585409856820588,
+    "op_point": {
+      "fpr": 0.04684782675491154,
+      "tpr": 0.9800389806200125
+    },
+    "mae_m": 0.013624032486230135,
+    "rmse_m": 0.019081549453549087
+  },
+  "pino": {
+    "global_auroc": 0.9907461278902975,
+    "mean_case_auroc": 0.986301069955068,
+    "std_case_auroc": 0.014918234113969456,
+    "median_case_auroc": 0.9926007903685019,
+    "iqr_case_auroc": [
+      0.9828906768909449,
+      0.9959060945844619
+    ],
+    "global_pr_auc": 0.9959745887138096,
+    "precision_at_threshold": 0.9417454289115593,
+    "recall_at_threshold": 0.9786297944323907,
+    "f1_at_threshold": 0.9598333953700418,
+    "csi_at_threshold": 0.922768901729454,
+    "op_point": {
+      "fpr": 0.12644949578747489,
+      "tpr": 0.9786297944323907
+    },
+    "mae_m": 0.017713019219227136,
+    "rmse_m": 0.024404166153632105
+  },
+  "comparison": {
+    "auroc_difference": 0.005724985208136135,
+    "f1_difference": 0.01899828871467857,
+    "csi_difference": 0.03577208395260478,
+    "better_classification_model": "ConvLSTM-based U-Net"
+  }
+}
