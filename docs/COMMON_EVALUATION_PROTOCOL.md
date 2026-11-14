@@ -24,7 +24,7 @@ Both repositories expose identical Python contract types (`ModelContract`, `Load
 
 - **Source Dataset:** [`holmescao/LarNO-dataset`](https://huggingface.co/datasets/holmescao/LarNO-dataset) (`ukea_8m_5min` at `8.0 m` and `region1_20m` at `20.0 m`).
 - **Event-Level Stratified Manifest (`data/split_manifest.json`, version `1.0.0`):**
-  - **100 Total Events:** 80 Futian (`region1_20m`, `400x560`, 72 steps) + 20 UKEA (`ukea_8m_5min`, `50x120`, 36 depth / 360 rain steps).
+  - **1000 Total Events:** 80 Futian (`region1_20m`, `400x560`, 72 steps) + 20 UKEA (`ukea_8m_5min`, `50x120`, 36 depth / 360 rain steps).
   - **Split Counts:** **80 Train** (64 Futian + 16 UKEA) / **10 Val** (8 Futian + 2 UKEA) / **10 Test** (8 Futian + 2 UKEA).
   - **Normalization Moments (`data/dataset_statistics.json`):** Fitted strictly on the **80 training events** only.
 - **Cross-Model UKEA `32x32` Benchmark Manifest (`shared_manifest.json`, version `1.1.0`):**

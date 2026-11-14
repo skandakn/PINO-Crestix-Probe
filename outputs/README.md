@@ -11,12 +11,12 @@ When running training, validation, evaluation, inference, prediction export, or 
 - `outputs/smoke_validation.json`, `outputs/sample_inference.json`, `outputs/benchmark.json`
 
 ## 2. External Google Drive Locations (`Crestix-Probe`)
-Large trained model weights, `.npz` prediction archives, and raw 100-event LarNO arrays are hosted externally on the team's shared Google Drive:
+Large trained model weights, `.npz` prediction archives, and raw 1000-event LarNO arrays are hosted externally on the team's shared Google Drive:
 
 | Artifact | Shared Google Drive Path | Local Ignored Destination |
 |---|---|---|
-| Raw 100-Event LarNO Dataset (~20 GB) | `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/` | `data/raw_larno/` |
-| UKEA `ukea_8m_5min` Subset | `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/ukea_8m_5min/` | `data/ukea_8m_5min/` |
+| Raw 1000-Event LarNO Dataset (~20 GB) | `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-1000Events/` | `data/raw_larno/` |
+| UKEA `ukea_8m_5min` Subset | `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-1000Events/ukea_8m_5min/` | `data/ukea_8m_5min/` |
 | Trained PINO UKEA `32x32` Checkpoint | `GoogleDrive://Crestix-Probe/PINO/checkpoints/best.pt` | `artifacts/ukea_32x32/checkpoints/best.pt` |
 | Trained PINO Common-Eval Checkpoint Alias | `GoogleDrive://Crestix-Probe/PINO/checkpoints/best_pino_model.pt` | `artifacts/ukea_32x32/best_pino_model.pt` |
 | Trained PINO Latest Epoch State | `GoogleDrive://Crestix-Probe/PINO/checkpoints/last.pt` | `artifacts/ukea_32x32/checkpoints/last.pt` |

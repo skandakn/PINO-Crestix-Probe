@@ -3,7 +3,7 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 
 > **Physics-Informed Neural Operator (FNO3d + 2D Shallow-Water Residual Heads)** for **Crestix Probe**  
-> Configured for **LarNO Urban Flood Benchmark (`ukea_8m_5min` 8.0 m, 32×32 crop)** and integrated with the shared 100-event **LarNO** data pipeline and common evaluation framework.  
+> Configured for **LarNO Urban Flood Benchmark (`ukea_8m_5min` 8.0 m, 32×32 crop)** and integrated with the shared 1000-event **LarNO** data pipeline and common evaluation framework.  
 > Sibling Deep-Learning model & comparison host: [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-)
 
 ---
@@ -41,7 +41,7 @@ Both `PINO-Crestix-Probe` and `ConvLSTM-baased-U-Net-for-Crestix-Probe-` impleme
 ## 3. LarNO Dataset Acquisition & Expected Shapes / Units
 
 - **Upstream Benchmark Source:** [`holmescao/LarNO-dataset`](https://huggingface.co/datasets/holmescao/LarNO-dataset) (`geodata/*` + `flood/*` + `benchmark.zip`, 2.28 GB).
-- **Shared Google Drive Mirror:** `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/` (~20 GB uncompressed across 100 events).
+- **Shared Google Drive Mirror:** `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-1000Events/` (~20 GB uncompressed across 1000 events).
 
 | Catchment | Region Tag | Events | Spatial Res. | Native Grid `(H, W)` | Target Crop `(H, W)` | Depth Array `h.npy` | Rainfall Array `rainfall.npy` | Cadence |
 |---|---|---|---|---|---|---|---|---|
@@ -65,7 +65,7 @@ python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --spl
 
 ## 4. Shared Event Split Manifests & Versions
 
-- **Official 100-Event Stratified Manifest:** [`data/split_manifest.json`](data/split_manifest.json) — **version `1.0.0`**
+- **Official 1000-Event Stratified Manifest:** [`data/split_manifest.json`](data/split_manifest.json) — **version `1.0.0`**
   - **Train (`80` events):** `64` Futian + `16` UKEA (`Train ∩ Val = ∅`, `Train ∩ Test = ∅`, `Val ∩ Test = ∅`).
   - **Val (`10` events):** `8` Futian + `2` UKEA (`r100y_p0.5_d3h_1`, `r200y_p0.7_d3h_1`).
   - **Test (`10` events):** `8` Futian + `2` UKEA (`r100y_p0.6_d3h_1`, `r500y_p0.9_d3h_1`).
@@ -104,7 +104,7 @@ conda activate crestix-pino
 
 ### A. Preprocessing & Physics Diagnostics
 ```bash
-# Audit 100-event manifests and split disjointness
+# Audit 1000-event manifests and split disjointness
 python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --split-manifest data/split_manifest.json
 
 # Run physics validation & dimensional diagnostics suite
@@ -186,7 +186,7 @@ python -m pytest -v
   - Common-Eval checkpoint alias (`docs/COMMON_EVALUATION_FRAMEWORK.md`): `GoogleDrive://Crestix-Probe/PINO/checkpoints/best_pino_model.pt` -> local `artifacts/ukea_32x32/best_pino_model.pt`
   - Resume checkpoint: `GoogleDrive://Crestix-Probe/PINO/checkpoints/last.pt` -> local `artifacts/ukea_32x32/checkpoints/last.pt`
   - PINO held-out prediction archive (`v1.1.0`): `GoogleDrive://Crestix-Probe/PINO/predictions_v1.1.0/`
-  - Raw dataset: `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/`
+  - Raw dataset: `GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-1000Events/`
   - Check local availability: `python scripts/download_checkpoints.py --check`
 
 ---

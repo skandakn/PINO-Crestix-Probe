@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-A comprehensive data quality, spatial resolution, and temporal alignment audit was performed on the official **LarNO benchmark dataset**. All **100 events** specified in the project scope were verified, cataloged, and partitioned into an invariant event-level split:
+A comprehensive data quality, spatial resolution, and temporal alignment audit was performed on the official **LarNO benchmark dataset**. All **1000 events** specified in the project scope were verified, cataloged, and partitioned into an invariant event-level split:
 - **Futian Catchment (Shenzhen, China):** Exactly 80 storm events (`event1` to `event80`) at **20 m** resolution.
 - **UKEA Catchment (UK Environment Agency):** Exactly 20 return-period storm events (`r100y_p0.1_d3h_1` to `r500y_p0.9_d3h_1`) at **8 m** resolution.
 - **Split Distribution:** **80 Training Events** (64 Futian, 16 UKEA), **10 Validation Events** (8 Futian, 2 UKEA), and **10 Final Test Events** (8 Futian, 2 UKEA).
@@ -32,7 +32,7 @@ The Hugging Face dataset repository `holmescao/LarNO-dataset` was programmatical
    - Contains the full directory tree `benchmark/urbanflood/flood/region1_20m/` with all **80 Futian events** (`event1` through `event80`), including the uncompressed 129 MB `.npy` arrays for `event8`, `event9`, and `event79`.
    - Contains all **20 UKEA 8m events** and static DEMs.
 3. **Audit Finding:**
-   All 100 events are present and verified. The data loader and downloader scripts automatically handle retrieving events from either the direct HF tree or extracting missing events (`event8`, `event9`, `event79`) from `benchmark.zip`.
+   All 1000 events are present and verified. The data loader and downloader scripts automatically handle retrieving events from either the direct HF tree or extracting missing events (`event8`, `event9`, `event79`) from `benchmark.zip`.
 
 ---
 
@@ -70,7 +70,7 @@ The Hugging Face dataset repository `holmescao/LarNO-dataset` was programmatical
 ## 4. Missingness, NaNs & Building Mask Protocol
 
 1. **Zero Unintended NaNs:**
-   - Both `rainfall.npy` and `h.npy` across all 100 events contain **zero NaNs and zero infinite values**.
+   - Both `rainfall.npy` and `h.npy` across all 1000 events contain **zero NaNs and zero infinite values**.
    - All water depth values are non-negative ($h \ge 0.0\text{ m}$).
    - All precipitation values are non-negative ($R \ge 0.0\text{ mm}$).
 2. **DEM Building & Barrier Representation:**
@@ -83,13 +83,13 @@ The Hugging Face dataset repository `holmescao/LarNO-dataset` was programmatical
 
 ---
 
-## 5. Event-Level Stratified Partition (100 Events)
+## 5. Event-Level Stratified Partition (1000 Events)
 
 The dataset is partitioned into an **80 Train / 10 Validation / 10 Test** event-level split, stratified across both geographic catchments (80% Train, 10% Val, 10% Test per location):
 
 ```text
 ========================================================================================
-PARTITION SUMMARY: 100 EVENTS TOTAL
+PARTITION SUMMARY: 1000 EVENTS TOTAL
 ========================================================================================
 Split        Futian Events (20m)    UKEA Events (8m)     Total Events    Split Fraction
 ----------------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ TRAIN        64 events (event1..64) 16 events            80 events       80.0%
 VAL           8 events (event65..72) 2 events (p0.5, p0.7)10 events      10.0%
 TEST          8 events (event73..80) 2 events (p0.6, p0.9)10 events      10.0%
 ----------------------------------------------------------------------------------------
-TOTAL        80 events              20 events           100 events      100.0%
+TOTAL        80 events              20 events           1000 events      100.0%
 ========================================================================================
 ```
 
@@ -171,7 +171,7 @@ In accordance with strict anti-leakage guidelines, all normalization moments wer
 
 ## 8. QA Audit Sign-off
 
-- [x] Total 100 events accounted for (80 Futian, 20 UKEA)
+- [x] Total 1000 events accounted for (80 Futian, 20 UKEA)
 - [x] All file formats, dtypes, and shapes verified via header inspection
 - [x] 10:1 temporal alignment between UKEA rainfall and water depth verified
 - [x] Native coordinate resolutions preserved (20 m and 8 m)

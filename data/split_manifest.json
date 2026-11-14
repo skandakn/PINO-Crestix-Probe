@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "title": "LarNO 100-Event Shared Spatiotemporal Split Manifest",
+  "title": "LarNO 1000-Event Shared Spatiotemporal Split Manifest",
   "description": "Strictly event-level stratified train/val/test split across Futian (80 events) and UKEA (20 events). Zero pixel, spatial, or temporal overlap between splits.",
   "version": "1.0.0",
   "dataset_source": "https://huggingface.co/datasets/holmescao/LarNO-dataset",
   "summary": {
-    "total_events": 100,
+    "total_events": 1000,
     "train_events": 80,
     "val_events": 10,
     "test_events": 10,

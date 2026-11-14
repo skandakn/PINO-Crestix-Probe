@@ -33,8 +33,8 @@ CHECKPOINT_REGISTRY = {
         "config": "configs/ukea_32x32.yaml",
     },
     "larno_raw_dataset": {
-        "architecture": "LarNO 100-Event Benchmark (80 Futian 20m + 20 UKEA 8m)",
-        "drive_path": "GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-100Events/",
+        "architecture": "LarNO 1000-Event Benchmark (80 Futian 20m + 20 UKEA 8m)",
+        "drive_path": "GoogleDrive://Crestix-Probe/Datasets/LarNO-UKEA-1000Events/",
         "local_path": "data/ukea_8m_5min",
         "config": "configs/larno_data_pipeline.yaml",
     },

@@ -2,7 +2,7 @@
 """
 inspect_larno_dataset.py
 ========================
-Dataset Inspection CLI tool for the Crestix Probe LarNO Benchmark (100 events).
+Dataset Inspection CLI tool for the Crestix Probe LarNO Benchmark (1000 events).
 Inspects dem.npy, rainfall.npy, and h.npy for local directory layouts or
 remotely queries Hugging Face metadata.
 
@@ -186,7 +186,7 @@ def audit_manifest_integrity(manifest_path: Path, split_path: Path) -> Dict[str,
 
     # Verify counts
     counts_valid = (
-        total_events == 100
+        total_events == 1000
         and len(futian_events) == 80
         and len(ukea_events) == 20
         and len(train_events) == 80

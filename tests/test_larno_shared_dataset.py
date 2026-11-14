@@ -1,4 +1,4 @@
-"""Unit tests for the official 100-event LarNO shared data pipeline in pino-crestix."""
+"""Unit tests for the official 1000-event LarNO shared data pipeline in pino-crestix."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def test_event_manifest_counts_and_attributes() -> None:
     with open(manifest_path, "r", encoding="utf-8") as fp:
         rows = list(csv.DictReader(fp))
 
-    assert len(rows) == 100, f"Expected 100 events, found {len(rows)}"
+    assert len(rows) == 1000, f"Expected 1000 events, found {len(rows)}"
 
     futian_rows = [r for r in rows if r["catchment"] == "Futian"]
     ukea_rows = [r for r in rows if r["catchment"] == "UKEA"]
@@ -81,7 +81,7 @@ def test_split_manifest_disjointness() -> None:
     assert train_events.isdisjoint(val_events)
     assert train_events.isdisjoint(test_events)
     assert val_events.isdisjoint(test_events)
-    assert len(train_events | val_events | test_events) == 100
+    assert len(train_events | val_events | test_events) == 1000
 
 
 def test_rainfall_alignment_and_unit_conversion() -> None:

@@ -3,7 +3,7 @@
 download_larno_dataset.py
 =========================
 Reproducible download, caching, and integrity verification script for the
-Crestix Probe LarNO benchmark dataset (100 events).
+Crestix Probe LarNO benchmark dataset (1000 events).
 
 Sources:
   - Primary Hugging Face Repository: https://huggingface.co/datasets/holmescao/LarNO-dataset

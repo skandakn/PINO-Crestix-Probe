@@ -1,6 +1,6 @@
 # LarNO Shared Dataset & Manifests — PINO Crestix Probe
 
-This directory hosts the official dataset manifests, split configurations, and train-only statistical moments for the **100-event LarNO Urban Flood Benchmark** shared with the [ConvLSTM U-Net](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) team.
+This directory hosts the official dataset manifests, split configurations, and train-only statistical moments for the **1000-event LarNO Urban Flood Benchmark** shared with the [ConvLSTM U-Net](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) team.
 
 ---
 
@@ -8,7 +8,7 @@ This directory hosts the official dataset manifests, split configurations, and t
 
 | File | Type | Description |
 | :--- | :---: | :--- |
-| `event_manifest.csv` | CSV | Complete catalog of all 100 events (80 Futian + 20 UKEA), detailing spatial resolutions, grid dimensions, timestep counts, array dtypes, alignment ratios, and units |
+| `event_manifest.csv` | CSV | Complete catalog of all 1000 events (80 Futian + 20 UKEA), detailing spatial resolutions, grid dimensions, timestep counts, array dtypes, alignment ratios, and units |
 | `split_manifest.json` | JSON | Formal event-level stratified split: **80 Train / 10 Val / 10 Test** (0 leakage) |
 | `dataset_statistics.json` | JSON | Normalization parameters fitted strictly across the 80 training events |
 

@@ -222,7 +222,7 @@ def build_pino_sample(
 
 
 
-# --- LarNO 100-Event Benchmark Shared Extensions ---
+# --- LarNO 1000-Event Benchmark Shared Extensions ---
 
 TRAIN_NORMALIZATION_STATS = {
     "futian": {
