@@ -264,31 +264,7 @@ def plot_only_auroc(results: Dict[str, Any], output_path: Path) -> None:
         zorder=7,
     )
 
-    # Explanatory Info Box
-    summary_text = (
-        r"$\bf{Benchmark\ Summary\ (1,000\ Cases)}$" "\n"
-        f"• ConvLSTM AUROC: {c_auc:.4f} (Mean: {results['mean_case_auroc_conv']:.4f} ± {results['std_case_auroc_conv']:.4f})\n"
-        f"• PINO AUROC: {p_auc:.4f} (Mean: {results['mean_case_auroc_pino']:.4f} ± {results['std_case_auroc_pino']:.4f})\n"
-        f"• Flood Threshold: τ = {FLOOD_THRESHOLD_M:.2f} m (3 cm)\n"
-        f"• Evaluation: 1,000 Spatiotemporal Storm Cases\n"
-        f"• Winner: ConvLSTM-based U-Net (+{delta_auc:.4f} AUROC)"
-    )
-    ax.text(
-        0.46,
-        0.20,
-        summary_text,
-        transform=ax.transAxes,
-        fontsize=9.8,
-        verticalalignment="center",
-        bbox=dict(
-            boxstyle="round,pad=0.6",
-            facecolor="#ffffff",
-            edgecolor="#e2e8f0",
-            linewidth=1.2,
-            alpha=0.95,
-        ),
-        zorder=7,
-    )
+
 
     # Axes limits & labels
     ax.set_xlim([-0.01, 1.01])
