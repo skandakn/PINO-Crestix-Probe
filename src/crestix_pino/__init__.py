@@ -1,11 +1,36 @@
-"""Crestix Probe PINO evaluation, benchmarking, and inference package."""
+"""Crestix Probe — Physics-Informed Fourier Neural Operator (PINO) for 2D Flood Prediction."""
 
 from crestix_pino.inference.model_loader import ModelContract, load_model
 from crestix_pino.inference.predictor import PINOPredictor, predict
 
+from .losses import (
+    DataLoss,
+    PINOCompositeLoss,
+    PhysicsLoss,
+    PhysicsLossWeights,
+)
+from .models import FNO3d, PINOFloodModel, PINOOutput
+from .physics import (
+    BoundaryConfig,
+    ShallowWaterConfig,
+    compute_swe_residuals,
+    mm_per_hour_to_m_per_sec,
+)
+
 __all__ = [
+    "BoundaryConfig",
+    "DataLoss",
+    "FNO3d",
     "ModelContract",
+    "PINOCompositeLoss",
+    "PINOFloodModel",
+    "PINOOutput",
     "PINOPredictor",
+    "PhysicsLoss",
+    "PhysicsLossWeights",
+    "ShallowWaterConfig",
+    "compute_swe_residuals",
     "load_model",
+    "mm_per_hour_to_m_per_sec",
     "predict",
 ]
