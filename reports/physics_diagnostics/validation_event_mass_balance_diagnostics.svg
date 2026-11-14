@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" width="1080" height="460" style="background:#ffffff;font-family:Segoe UI,Arial,sans-serif;">
+<text x="540.0" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#111827">Official UKEA Validation Events: Actual Volume vs Closed-Domain Mass Assumption</text>
+<rect x="85" y="65" width="445" height="320" fill="#f9fafb" stroke="#d1d5db"/>
+<text x="307.5" y="57.0" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">r200y_p0.5_d3h_1 (Net Outflow = 75.5% of Rain Input)</text>
+<line x1="85" y1="385.0" x2="530" y2="385.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="389.0" text-anchor="end" font-size="10" fill="#4b5563">0</text>
+<line x1="85.0" y1="65" x2="85.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="85.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">0</text>
+<line x1="85" y1="305.0" x2="530" y2="305.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="309.0" text-anchor="end" font-size="10" fill="#4b5563">3.98e+03</text>
+<line x1="196.2" y1="65" x2="196.2" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="196.2" y="400" text-anchor="middle" font-size="10" fill="#4b5563">43.8</text>
+<line x1="85" y1="225.0" x2="530" y2="225.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="229.0" text-anchor="end" font-size="10" fill="#4b5563">7.95e+03</text>
+<line x1="307.5" y1="65" x2="307.5" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="307.5" y="400" text-anchor="middle" font-size="10" fill="#4b5563">87.5</text>
+<line x1="85" y1="145.0" x2="530" y2="145.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="149.0" text-anchor="end" font-size="10" fill="#4b5563">1.19e+04</text>
+<line x1="418.8" y1="65" x2="418.8" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="418.8" y="400" text-anchor="middle" font-size="10" fill="#4b5563">131</text>
+<line x1="85" y1="65.0" x2="530" y2="65.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="69.0" text-anchor="end" font-size="10" fill="#4b5563">1.59e+04</text>
+<line x1="530.0" y1="65" x2="530.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="530.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">175</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2.2" points="85.0,385.0 97.7,384.0 110.4,382.9 123.1,381.8 135.9,380.8 148.6,379.5 161.3,378.2 174.0,376.7 186.7,375.3 199.4,373.6 212.1,371.6 224.9,369.0 237.6,366.5 250.3,364.3 263.0,362.6 275.7,361.0 288.4,359.4 301.1,357.1 313.9,354.4 326.6,351.9 339.3,349.3 352.0,346.7 364.7,344.3 377.4,341.6 390.1,339.1 402.9,336.5 415.6,333.7 428.3,331.1 441.0,328.2 453.7,325.3 466.4,322.3 479.1,319.2 491.9,316.0 504.6,313.0 517.3,309.9 530.0,306.7"/>
+<polyline fill="none" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="5,4" points="85.0,385.0 97.7,375.5 110.4,365.1 123.1,353.7 135.9,340.7 148.6,325.6 161.3,306.9 174.0,281.1 186.7,229.4 199.4,177.7 212.1,151.9 224.9,133.2 237.6,118.1 250.3,105.2 263.0,93.7 275.7,83.3 288.4,73.8 301.1,65.0 313.9,65.0 326.6,65.0 339.3,65.0 352.0,65.0 364.7,65.0 377.4,65.0 390.1,65.0 402.9,65.0 415.6,65.0 428.3,65.0 441.0,65.0 453.7,65.0 466.4,65.0 479.1,65.0 491.9,65.0 504.6,65.0 517.3,65.0 530.0,65.0"/>
+<line x1="97" y1="77" x2="117" y2="77" stroke="#2563eb" stroke-width="2.5"/>
+<text x="123" y="81" font-size="10.5" fill="#111827">LarNO Ground-Truth Volume (valid 32x32)</text>
+<line x1="97" y1="93" x2="117" y2="93" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="5,4"/>
+<text x="123" y="97" font-size="10.5" fill="#111827">Closed-Domain Assumption (V0 + Rain)</text>
+<text x="307.5" y="418" text-anchor="middle" font-size="11" fill="#374151">Time (minutes)</text>
+<text x="41" y="225.0" text-anchor="middle" font-size="11" fill="#374151" transform="rotate(-90 41 225.0)">Domain Water Volume (m^3)</text>
+<rect x="595" y="65" width="445" height="320" fill="#f9fafb" stroke="#d1d5db"/>
+<text x="817.5" y="57.0" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">r300y_p0.9_d3h_1 (Net Outflow = 78.3% of Rain Input)</text>
+<line x1="595" y1="385.0" x2="1040" y2="385.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="389.0" text-anchor="end" font-size="10" fill="#4b5563">0</text>
+<line x1="595.0" y1="65" x2="595.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="595.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">0</text>
+<line x1="595" y1="305.0" x2="1040" y2="305.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="309.0" text-anchor="end" font-size="10" fill="#4b5563">4.16e+03</text>
+<line x1="706.2" y1="65" x2="706.2" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="706.2" y="400" text-anchor="middle" font-size="10" fill="#4b5563">43.8</text>
+<line x1="595" y1="225.0" x2="1040" y2="225.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="229.0" text-anchor="end" font-size="10" fill="#4b5563">8.32e+03</text>
+<line x1="817.5" y1="65" x2="817.5" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="817.5" y="400" text-anchor="middle" font-size="10" fill="#4b5563">87.5</text>
+<line x1="595" y1="145.0" x2="1040" y2="145.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="149.0" text-anchor="end" font-size="10" fill="#4b5563">1.25e+04</text>
+<line x1="928.8" y1="65" x2="928.8" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="928.8" y="400" text-anchor="middle" font-size="10" fill="#4b5563">131</text>
+<line x1="595" y1="65.0" x2="1040" y2="65.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="69.0" text-anchor="end" font-size="10" fill="#4b5563">1.66e+04</text>
+<line x1="1040.0" y1="65" x2="1040.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="1040.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">175</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2.2" points="595.0,385.0 607.7,383.9 620.4,382.7 633.1,381.5 645.9,380.3 658.6,379.0 671.3,377.4 684.0,375.9 696.7,374.4 709.4,372.6 722.1,370.2 734.9,367.6 747.6,365.4 760.3,363.8 773.0,362.3 785.7,360.8 798.4,358.9 811.1,356.4 823.9,354.2 836.6,351.8 849.3,349.6 862.0,347.5 874.7,345.3 887.4,343.1 900.1,341.1 912.9,338.9 925.6,336.5 938.3,334.4 951.0,332.0 963.7,329.8 976.4,327.4 989.1,325.1 1001.9,322.7 1014.6,320.1 1027.3,317.9 1040.0,315.5"/>
+<polyline fill="none" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="5,4" points="595.0,385.0 607.7,376.0 620.4,366.6 633.1,356.8 645.9,346.5 658.6,335.6 671.3,324.0 684.0,311.7 696.7,298.4 709.4,284.0 722.1,268.0 734.9,250.1 747.6,229.3 760.3,204.0 773.0,170.8 785.7,117.9 798.4,75.8 811.1,65.0 823.9,65.0 836.6,65.0 849.3,65.0 862.0,65.0 874.7,65.0 887.4,65.0 900.1,65.0 912.9,65.0 925.6,65.0 938.3,65.0 951.0,65.0 963.7,65.0 976.4,65.0 989.1,65.0 1001.9,65.0 1014.6,65.0 1027.3,65.0 1040.0,65.0"/>
+<line x1="607" y1="77" x2="627" y2="77" stroke="#2563eb" stroke-width="2.5"/>
+<text x="633" y="81" font-size="10.5" fill="#111827">LarNO Ground-Truth Volume (valid 32x32)</text>
+<line x1="607" y1="93" x2="627" y2="93" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="5,4"/>
+<text x="633" y="97" font-size="10.5" fill="#111827">Closed-Domain Assumption (V0 + Rain)</text>
+<text x="817.5" y="418" text-anchor="middle" font-size="11" fill="#374151">Time (minutes)</text>
+<text x="551" y="225.0" text-anchor="middle" font-size="11" fill="#374151" transform="rotate(-90 551 225.0)">Domain Water Volume (m^3)</text>
+</svg>

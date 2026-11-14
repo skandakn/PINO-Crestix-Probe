@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" width="1080" height="460" style="background:#ffffff;font-family:Segoe UI,Arial,sans-serif;">
+<text x="540.0" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#111827">Loss Scale Imbalance &amp; Gradient Dominance (Real UKEA Crop + Building-NaN Patch)</text>
+<rect x="85" y="65" width="440" height="320" fill="#f9fafb" stroke="#d1d5db"/>
+<text x="305.0" y="57" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">Grad Norm ||dL/dh_raw||_2 (log10): Unmasked vs Masked</text>
+<line x1="85" y1="374.3" x2="525" y2="374.3" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="378.3" text-anchor="end" font-size="10" fill="#4b5563">1e-12</text>
+<line x1="85" y1="331.7" x2="525" y2="331.7" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="335.7" text-anchor="end" font-size="10" fill="#4b5563">1e-10</text>
+<line x1="85" y1="289.0" x2="525" y2="289.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="293.0" text-anchor="end" font-size="10" fill="#4b5563">1e-8</text>
+<line x1="85" y1="246.3" x2="525" y2="246.3" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="250.3" text-anchor="end" font-size="10" fill="#4b5563">1e-6</text>
+<line x1="85" y1="203.7" x2="525" y2="203.7" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="207.7" text-anchor="end" font-size="10" fill="#4b5563">1e-4</text>
+<line x1="85" y1="161.0" x2="525" y2="161.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="165.0" text-anchor="end" font-size="10" fill="#4b5563">1e-2</text>
+<line x1="85" y1="118.3" x2="525" y2="118.3" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="122.3" text-anchor="end" font-size="10" fill="#4b5563">1e0</text>
+<line x1="85" y1="75.7" x2="525" y2="75.7" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="79" y="79.7" text-anchor="end" font-size="10" fill="#4b5563">1e2</text>
+<rect x="97.3" y="154.3" width="29.9" height="230.7" fill="#dc2626" opacity="0.88"/>
+<rect x="129.0" y="154.3" width="29.9" height="230.7" fill="#16a34a" opacity="0.88"/>
+<text x="129.0" y="400" text-anchor="middle" font-size="10" fill="#374151">UKEA Data</text>
+<rect x="185.3" y="211.0" width="29.9" height="174.0" fill="#dc2626" opacity="0.88"/>
+<rect x="217.0" y="211.0" width="29.9" height="174.0" fill="#16a34a" opacity="0.88"/>
+<text x="217.0" y="400" text-anchor="middle" font-size="10" fill="#374151">UKEA Cont</text>
+<rect x="273.3" y="162.7" width="29.9" height="222.3" fill="#dc2626" opacity="0.88"/>
+<rect x="305.0" y="162.7" width="29.9" height="222.3" fill="#16a34a" opacity="0.88"/>
+<text x="305.0" y="400" text-anchor="middle" font-size="10" fill="#374151">UKEA MomX</text>
+<rect x="361.3" y="95.7" width="29.9" height="289.3" fill="#dc2626" opacity="0.88"/>
+<rect x="393.0" y="374.0" width="29.9" height="11.0" fill="#16a34a" opacity="0.88"/>
+<text x="393.0" y="400" text-anchor="middle" font-size="10" fill="#374151">Bldg MomX</text>
+<rect x="449.3" y="125.6" width="29.9" height="259.4" fill="#dc2626" opacity="0.88"/>
+<rect x="481.0" y="172.4" width="29.9" height="212.6" fill="#16a34a" opacity="0.88"/>
+<text x="481.0" y="400" text-anchor="middle" font-size="10" fill="#374151">Bldg 0.1*Phys</text>
+<rect x="97" y="77" width="12" height="12" fill="#dc2626"/><text x="113" y="87" font-size="10.5" fill="#111827">Current Unmasked (w_phys=0.1)</text>
+<rect x="97" y="95" width="12" height="12" fill="#16a34a"/><text x="113" y="105" font-size="10.5" fill="#111827">Building-Masked (w_phys=0.1)</text>
+<text x="41" y="225.0" text-anchor="middle" font-size="11" fill="#374151" transform="rotate(-90 41 225.0)">Gradient Norm (log10)</text>
+<rect x="595" y="65" width="445" height="320" fill="#f9fafb" stroke="#d1d5db"/>
+<text x="817.5" y="57.0" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">Optimization Steps: Weighted Physics vs Data MSE</text>
+<line x1="595" y1="385.0" x2="1040" y2="385.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="389.0" text-anchor="end" font-size="10" fill="#4b5563">1e-8</text>
+<line x1="595.0" y1="65" x2="595.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="595.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">0</text>
+<line x1="595" y1="305.0" x2="1040" y2="305.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="309.0" text-anchor="end" font-size="10" fill="#4b5563">1e-6</text>
+<line x1="706.2" y1="65" x2="706.2" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="706.2" y="400" text-anchor="middle" font-size="10" fill="#4b5563">9.75</text>
+<line x1="595" y1="225.0" x2="1040" y2="225.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="229.0" text-anchor="end" font-size="10" fill="#4b5563">1e-4</text>
+<line x1="817.5" y1="65" x2="817.5" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="817.5" y="400" text-anchor="middle" font-size="10" fill="#4b5563">19.5</text>
+<line x1="595" y1="145.0" x2="1040" y2="145.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="149.0" text-anchor="end" font-size="10" fill="#4b5563">1e-2</text>
+<line x1="928.8" y1="65" x2="928.8" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="928.8" y="400" text-anchor="middle" font-size="10" fill="#4b5563">29.2</text>
+<line x1="595" y1="65.0" x2="1040" y2="65.0" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="589" y="69.0" text-anchor="end" font-size="10" fill="#4b5563">1e0</text>
+<line x1="1040.0" y1="65" x2="1040.0" y2="385" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+<text x="1040.0" y="400" text-anchor="middle" font-size="10" fill="#4b5563">39</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2.2" points="595.0,90.7 606.4,110.5 617.8,126.2 629.2,133.4 640.6,134.4 652.1,133.4 663.5,131.9 674.9,130.4 686.3,129.0 697.7,127.7 709.1,126.5 720.5,125.5 731.9,124.6 743.3,123.9 754.7,123.3 766.2,123.0 777.6,122.9 789.0,122.9 800.4,123.2 811.8,123.5 823.2,124.0 834.6,124.5 846.0,125.2 857.4,125.8 868.8,126.6 880.3,127.3 891.7,128.1 903.1,129.0 914.5,129.9 925.9,130.9 937.3,131.9 948.7,132.9 960.1,133.9 971.5,134.7 982.9,135.4 994.4,135.9 1005.8,136.2 1017.2,136.4 1028.6,136.3 1040.0,136.2"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="5,4" points="595.0,142.4 606.4,169.1 617.8,191.8 629.2,201.1 640.6,202.8 652.1,200.9 663.5,193.3 674.9,182.1 686.3,173.0 697.7,168.4 709.1,167.9 720.5,169.6 731.9,171.8 743.3,174.3 754.7,177.2 766.2,180.4 777.6,183.3 789.0,185.0 800.4,184.7 811.8,182.3 823.2,179.2 834.6,176.8 846.0,175.9 857.4,176.5 868.8,177.8 880.3,179.1 891.7,179.7 903.1,179.8 914.5,179.8 925.9,179.9 937.3,179.9 948.7,179.7 960.1,179.3 971.5,179.0 982.9,179.3 994.4,180.2 1005.8,181.6 1017.2,182.9 1028.6,183.8 1040.0,183.8"/>
+<polyline fill="none" stroke="#16a34a" stroke-width="2.2" points="595.0,179.7 606.4,203.9 617.8,225.7 629.2,236.0 640.6,236.1 652.1,233.7 663.5,231.7 674.9,230.3 686.3,229.2 697.7,228.5 709.1,228.1 720.5,227.7 731.9,227.6 743.3,227.5 754.7,227.6 766.2,227.7 777.6,227.9 789.0,228.2 800.4,228.7 811.8,229.2 823.2,229.9 834.6,230.8 846.0,231.9 857.4,233.3 868.8,235.2 880.3,237.6 891.7,240.9 903.1,245.5 914.5,252.3 925.9,263.0 937.3,282.6 948.7,353.1 960.1,289.8 971.5,264.9 982.9,254.4 994.4,251.7 1005.8,255.6 1017.2,266.0 1028.6,286.1 1040.0,336.0"/>
+<polyline fill="none" stroke="#2563eb" stroke-width="2.2" stroke-dasharray="5,4" points="595.0,142.4 606.4,169.1 617.8,192.6 629.2,197.7 640.6,193.4 652.1,189.7 663.5,187.1 674.9,185.5 686.3,184.3 697.7,183.6 709.1,183.1 720.5,182.8 731.9,182.6 743.3,182.5 754.7,182.6 766.2,182.7 777.6,182.9 789.0,183.2 800.4,183.7 811.8,184.2 823.2,184.9 834.6,185.8 846.0,186.9 857.4,188.3 868.8,190.2 880.3,192.6 891.7,195.9 903.1,200.5 914.5,207.3 925.9,218.0 937.3,237.7 948.7,310.0 960.1,244.8 971.5,219.9 982.9,209.4 994.4,206.7 1005.8,210.6 1017.2,221.1 1028.6,241.1 1040.0,291.6"/>
+<line x1="607" y1="77" x2="627" y2="77" stroke="#dc2626" stroke-width="2.5"/>
+<text x="633" y="81" font-size="10.5" fill="#111827">Unmasked Weighted Physics</text>
+<line x1="607" y1="93" x2="627" y2="93" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="5,4"/>
+<text x="633" y="97" font-size="10.5" fill="#111827">Unmasked Data MSE</text>
+<line x1="607" y1="109" x2="627" y2="109" stroke="#16a34a" stroke-width="2.5"/>
+<text x="633" y="113" font-size="10.5" fill="#111827">Corrected Weighted Physics</text>
+<line x1="607" y1="125" x2="627" y2="125" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="5,4"/>
+<text x="633" y="129" font-size="10.5" fill="#111827">Corrected Data MSE</text>
+<text x="817.5" y="418" text-anchor="middle" font-size="11" fill="#374151">Gradient Descent Step</text>
+<text x="551" y="225.0" text-anchor="middle" font-size="11" fill="#374151" transform="rotate(-90 551 225.0)">log10 Loss Component</text>
+</svg>
