@@ -238,7 +238,6 @@ res = predictor.predict(
 )
 ```
 
-
 ---
 
 ## 11. Official LarNO Shared Data Pipeline (100 Events)
@@ -266,3 +265,16 @@ python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --spl
 # Reproducible download utility (dry-run check)
 python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --catchment UKEA --split val --dry-run
 ```
+
+---
+
+## 12. Common Evaluation Framework (ConvLSTM U-Net vs. PINO)
+
+Cross-model benchmarking against **ConvLSTM-based U-Net** is governed by a single shared protocol hosted in [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-):
+
+- **Integration Guide & Export Instructions:** [`docs/COMMON_EVALUATION_FRAMEWORK.md`](docs/COMMON_EVALUATION_FRAMEWORK.md)
+- **Shared Event Manifest (`v1.1.0`):** [`shared_manifest.json`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/shared_manifest.json) (`holmescao/LarNO-dataset`, `ukea_8m_5min`, crop `(9, 44, 32x32)`, 6 train / 2 val / 10 test events, 36-step horizon, `0.03 m` flood threshold, `non_building_and_finite_dem` masking)
+- **Canonical Evaluator & Prediction Format:** [`common_evaluator.py`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/common_evaluator.py) | [`PREDICTION_FORMAT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/PREDICTION_FORMAT.md)
+- **Comparison Report & Fairness Checklist:** [`reports/MODEL_COMPARISON_REPORT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/MODEL_COMPARISON_REPORT.md) | [`reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md)
+- **Google Drive Prediction Archive:** `GoogleDrive://Crestix-Probe/PINO/predictions_v1.1.0/`
+

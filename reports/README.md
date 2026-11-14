@@ -49,3 +49,14 @@
 3. **Horizon Drift:** Autoregressive or multi-step rollouts may accumulate mass-conservation and phase errors at longer horizons; always inspect `horizon_metrics` per step.
 4. **Domain & Unit Sensitivity:** Inputs must strictly adhere to SI units (`m` for DEM/depth, `mm/h` for rainfall). Silent unit or dimension conversions are rejected by `PINOPredictor.preprocess`.
 5. **Diffusive-Wave Residual Approximation:** `compute_physics_residual` uses interior finite-difference gradients of $\eta = z_{\text{DEM}} + h$ with a small slope regularizer $\epsilon$, so boundary cells are excluded and steep shocks/discontinuities may exhibit elevated finite-difference residuals.
+
+---
+
+## 6. Cross-Model Comparison (ConvLSTM U-Net vs. PINO)
+
+To compare PINO fairly against ConvLSTM-based U-Net on identical held-out LarNO test events (`shared_manifest.json` `v1.1.0`, 36-step 3 h rollout, `0.03 m` flood threshold):
+
+- **PINO Export Guide:** [`../docs/COMMON_EVALUATION_FRAMEWORK.md`](../docs/COMMON_EVALUATION_FRAMEWORK.md)
+- **Unified Evaluator & Comparison Outputs:** [`skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) (`common_evaluator.py`, `outputs/comparison/model_comparison.csv`)
+- **Joint Comparison Report & Checklist:** [`MODEL_COMPARISON_REPORT.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/MODEL_COMPARISON_REPORT.md) | [`LIMITATIONS_AND_FAIRNESS_CHECKLIST.md`](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-/blob/main/reports/LIMITATIONS_AND_FAIRNESS_CHECKLIST.md)
+
