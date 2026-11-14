@@ -16,10 +16,10 @@ build/
 *.pt
 *.pth
 *.ckpt
-data/
-outputs/
-logs/
-artifacts/
+/data/
+/outputs/
+/logs/
+/artifacts/
 
 # OS / IDE
 .DS_Store
