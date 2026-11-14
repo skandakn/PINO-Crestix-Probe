@@ -1,0 +1,19 @@
+{
+  "num_cases": 1000,
+  "total_cells": 1005579,
+  "prevalence": 0.5379348614082037,
+  "prauc_conv": 0.9707902532035425,
+  "prauc_pino": 0.9524578595596762,
+  "mean_case_prauc_conv": 0.9143161750263316,
+  "std_case_prauc_conv": 0.1441811461091662,
+  "mean_case_prauc_pino": 0.8778500359117352,
+  "std_case_prauc_pino": 0.17723190514018172,
+  "op_conv": {
+    "precision": 0.8538289866487991,
+    "recall": 0.9258100773474126
+  },
+  "op_pino": {
+    "precision": 0.7649571345295175,
+    "recall": 0.9266918822189686
+  }
+}
