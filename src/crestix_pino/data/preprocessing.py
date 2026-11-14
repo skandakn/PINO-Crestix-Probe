@@ -219,3 +219,102 @@ def build_pino_sample(
         "manning_n": torch.tensor(float(manning_n), dtype=torch.float32),
         "event_id": event_id,
     }
+
+
+
+# --- LarNO 100-Event Benchmark Shared Extensions ---
+
+TRAIN_NORMALIZATION_STATS = {
+    "futian": {
+        "dem": {"mean": 34.324936, "std": 18.215164, "min": 0.693749, "max": 50.0},
+        "rainfall": {"mean": 0.742815, "std": 1.489230, "min": 0.0, "max": 18.52},
+        "water_depth": {"mean": 0.048712, "std": 0.162450, "min": 0.0, "max": 3.4215},
+        "wall_threshold_m": 50.0,
+    },
+    "ukea": {
+        "dem": {"mean": 28.486835, "std": 4.039457, "min": 21.148045, "max": 40.0},
+        "rainfall": {"mean": 0.607498, "std": 0.627756, "min": 0.0, "max": 3.551322},
+        "water_depth": {"mean": 0.126487, "std": 0.223847, "min": 0.0, "max": 1.912649},
+        "wall_threshold_m": 40.0,
+        "crop_32x32": {
+            "dem_mean": 26.684261,
+            "dem_std": 1.847113,
+            "dem_min": 21.684074,
+            "dem_max": 31.464674,
+        },
+    },
+}
+
+
+def align_rainfall_substeps(
+    rainfall: np.ndarray,
+    target_steps: Optional[int] = None,
+    mode: str = "sum",
+) -> np.ndarray:
+    """Align raw rainfall array (T_r, H, W) to match water depth frames (T_h, H, W)."""
+    t_r = rainfall.shape[0]
+    if target_steps is None or t_r == target_steps:
+        return rainfall.astype(np.float32)
+
+    if t_r % target_steps == 0:
+        factor = t_r // target_steps
+        h_dim, w_dim = rainfall.shape[1], rainfall.shape[2]
+        reshaped = rainfall.reshape(target_steps, factor, h_dim, w_dim)
+        if mode == "sum":
+            aligned = reshaped.sum(axis=1)
+        elif mode == "mean":
+            aligned = reshaped.mean(axis=1)
+        else:
+            raise ValueError(f"Unsupported alignment mode: {mode}")
+        return aligned.astype(np.float32)
+
+    idx = np.linspace(0, t_r - 1, target_steps).astype(np.int64)
+    return rainfall[idx].astype(np.float32)
+
+
+def rainfall_to_flux_m_s(rainfall_mm_5min: np.ndarray) -> np.ndarray:
+    """Convert rainfall from mm per 5-minute interval to SI mass flux rate m/s."""
+    scale = 1.0 / 300000.0
+    return (rainfall_mm_5min * np.float32(scale)).astype(np.float32)
+
+
+class LarNONormalizer:
+    """Normalizer initialized with train-only empirical moments."""
+
+    def __init__(
+        self,
+        catchment: str = "futian",
+        stats_file: Optional[Union[str, Path]] = None,
+    ):
+        import json
+        self.catchment = catchment.lower()
+        if stats_file and Path(stats_file).exists():
+            with open(stats_file, "r", encoding="utf-8") as fp:
+                loaded = json.load(fp)
+            loc_key = "futian_region1_20m" if self.catchment == "futian" else "ukea_8m_5min"
+            loc_stats = loaded.get("locations", {}).get(loc_key, {}).get("statistics", {})
+            self.dem_stats = loc_stats.get("dem", {})
+            self.rain_stats = loc_stats.get("rainfall", loc_stats.get("rainfall_5min_accumulated", {}))
+            self.h_stats = loc_stats.get("water_depth", {})
+        else:
+            ref = TRAIN_NORMALIZATION_STATS.get(self.catchment, TRAIN_NORMALIZATION_STATS["futian"])
+            self.dem_stats = ref["dem"]
+            self.rain_stats = ref["rainfall"]
+            self.h_stats = ref["water_depth"]
+
+    def normalize_dem(self, dem: np.ndarray) -> np.ndarray:
+        m, s = self.dem_stats["mean"], self.dem_stats["std"]
+        return ((dem - m) / (s + 1e-7)).astype(np.float32)
+
+    def normalize_rainfall(self, rain: np.ndarray) -> np.ndarray:
+        m, s = self.rain_stats["mean"], self.rain_stats["std"]
+        return ((rain - m) / (s + 1e-7)).astype(np.float32)
+
+    def normalize_depth(self, h: np.ndarray) -> np.ndarray:
+        m, s = self.h_stats["mean"], self.h_stats["std"]
+        return ((h - m) / (s + 1e-7)).astype(np.float32)
+
+    def denormalize_depth(self, h_norm: np.ndarray) -> np.ndarray:
+        m, s = self.h_stats["mean"], self.h_stats["std"]
+        denorm = h_norm * s + m
+        return np.clip(denorm, 0.0, None).astype(np.float32)

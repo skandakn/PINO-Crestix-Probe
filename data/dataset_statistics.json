@@ -1,0 +1,129 @@
+{
+  "title": "LarNO Dataset Normalization & Distribution Statistics (Train-Only Fit)",
+  "version": "1.0.0",
+  "fit_scope": "STRICTLY computed across the 80 training events (64 Futian + 16 UKEA). Test and validation events were strictly excluded to prevent data leakage.",
+  "locations": {
+    "futian_region1_20m": {
+      "catchment_name": "Futian, Shenzhen, China",
+      "tag": "region1_20m",
+      "spatial_resolution_m": 20.0,
+      "spatial_shape": [
+        400,
+        560
+      ],
+      "total_cells": 224000,
+      "event_duration_hours": 6.0,
+      "time_steps": 72,
+      "time_interval_minutes": 5,
+      "train_events_count": 64,
+      "statistics": {
+        "dem": {
+          "units": "m",
+          "mean": 34.324936,
+          "std": 18.215164,
+          "min": 0.693749,
+          "max": 50.0,
+          "building_elevation_threshold_m": 50.0,
+          "natural_terrain_mean": 26.8124,
+          "natural_terrain_std": 12.3951,
+          "natural_terrain_min": 0.693749,
+          "natural_terrain_max": 49.85
+        },
+        "rainfall": {
+          "units": "mm/5min",
+          "mean": 0.742815,
+          "std": 1.48923,
+          "min": 0.0,
+          "max": 18.52,
+          "q95": 4.12,
+          "q99": 8.35
+        },
+        "water_depth": {
+          "units": "m",
+          "mean": 0.048712,
+          "std": 0.16245,
+          "min": 0.0,
+          "max": 3.4215,
+          "wet_cell_threshold_m": 0.05,
+          "mean_flooded_fraction": 0.1845
+        }
+      }
+    },
+    "ukea_8m_5min": {
+      "catchment_name": "UK Environment Agency Catchment Site",
+      "tag": "ukea_8m_5min",
+      "spatial_resolution_m": 8.0,
+      "spatial_shape": [
+        50,
+        120
+      ],
+      "total_cells": 6000,
+      "event_duration_hours": 3.0,
+      "water_depth_time_steps": 36,
+      "rainfall_raw_time_steps": 360,
+      "rainfall_substep_seconds": 30,
+      "time_interval_minutes": 5,
+      "train_events_count": 16,
+      "statistics": {
+        "dem": {
+          "units": "m",
+          "mean": 28.486835,
+          "std": 4.039457,
+          "min": 21.148045,
+          "max": 40.0,
+          "boundary_wall_elevation_m": 40.0
+        },
+        "rainfall_5min_accumulated": {
+          "units": "mm/5min",
+          "mean": 0.607498,
+          "std": 0.627756,
+          "min": 0.0,
+          "max": 3.551322
+        },
+        "water_depth": {
+          "units": "m",
+          "mean": 0.126487,
+          "std": 0.223847,
+          "min": 0.0,
+          "max": 1.912649
+        }
+      },
+      "official_32x32_crop": {
+        "row_slice": [
+          12,
+          44
+        ],
+        "col_slice": [
+          32,
+          64
+        ],
+        "physical_span_m": [
+          256.0,
+          256.0
+        ],
+        "dem_mean": 26.684261,
+        "dem_std": 1.847113,
+        "dem_min": 21.684074,
+        "dem_max": 31.464674
+      }
+    }
+  },
+  "transformation_protocols": {
+    "zscore": {
+      "formula": "x_norm = (x - mean) / std",
+      "description": "Standard zero-mean unit-variance transformation using train statistics."
+    },
+    "minmax": {
+      "formula": "x_scaled = (x - min) / (max - min)",
+      "description": "Bounded [0, 1] normalization preserving physical zero floor."
+    },
+    "rainfall_physics_m_s": {
+      "formula": "R_m_s = R_mm_5min / (1000.0 * 300.0)",
+      "description": "Conversion from mm per 5-minute interval to SI mass flux rate m/s."
+    },
+    "building_mask": {
+      "formula": "mask = isnan(dem) | (dem >= wall_threshold)",
+      "description": "Binary mask (1 = building/boundary barrier, 0 = active hydraulic conveyance surface). Rainfall forced to 0 on building cells."
+    }
+  }
+}

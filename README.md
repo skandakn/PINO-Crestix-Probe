@@ -237,3 +237,32 @@ res = predictor.predict(
     forecast_steps=12,
 )
 ```
+
+
+---
+
+## 11. Official LarNO Shared Data Pipeline (100 Events)
+
+This repository integrates the verified, shared LarNO dataset pipeline and contracts coordinated with the [ConvLSTM U-Net](https://github.com/skandakn/ConvLSTM-baased-U-Net-for-Crestix-Probe-) team:
+
+### Catchment Architecture & Resolution Preservation
+- **Futian Catchment (`region1_20m`):** 80 events at **20.0 m** resolution, $400 \times 560$ grid, 72 timesteps (5 min), 1:1 temporal alignment.
+- **UKEA Catchment (`ukea_8m_5min`):** 20 events at **8.0 m** resolution, $50 \times 120$ grid, 360 rainfall sub-steps aligned to 36 depth frames (10:1 accumulation).
+- Native spatial resolutions are strictly preserved across both catchments.
+
+### Manifests & Training Statistics
+- `data/event_manifest.csv`: Exhaustive metadata table for all 100 events (dimensions, timesteps, dtypes, units, alignment ratios).
+- `data/split_manifest.json`: Invariant event-level stratified split (80 Train / 10 Val / 10 Test). Zero leakage between splits.
+- `data/dataset_statistics.json`: Normalization parameters fitted **strictly on the 80 training events** (test events excluded).
+- `configs/larno_data_pipeline.yaml`: Declarative shared pipeline configuration.
+- `reports/data_quality_report.md`: Complete QA audit and verification report.
+- `src/crestix_pino/data/larno_dataset.py`: Multi-catchment memory-mapped dataset loader supporting both PINO and ConvLSTM formats.
+
+### Pipeline Tools
+```bash
+# Audit manifest integrity & event counts
+python scripts/inspect_larno_dataset.py --manifest data/event_manifest.csv --split-manifest data/split_manifest.json
+
+# Reproducible download utility (dry-run check)
+python scripts/download_larno_dataset.py --manifest data/event_manifest.csv --catchment UKEA --split val --dry-run
+```
