@@ -1,0 +1,26 @@
+# Python / Virtualenvs
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Data & Checkpoints
+*.pt
+*.pth
+*.ckpt
+data/
+outputs/
+logs/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
